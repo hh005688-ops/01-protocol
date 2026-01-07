@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>01 理財協議 | 會員專屬系統 (Macaron Edition)</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 定義馬卡龍色系變數 */
+        :root {
+            --bg-cream: #F9FAFB;      /* 香草奶油背景 */
+            --card-white: #FFFFFF;    /* 純白卡片 */
+            --text-dark: #374151;     /* 深灰文字 (非純黑) */
+            --text-muted: #9CA3AF;    /* 淺灰文字 */
+            
+            --macaron-mint: #34D399;  /* 薄荷綠 (主色/安全) */
+            --macaron-rose: #FB7185;  /* 玫瑰粉 (警戒/生存) */
+            --macaron-peach: #FBBF24; /* 蜜桃黃 (模擬/中性) */
+            --macaron-blue: #60A5FA;  /* 天空藍 (連結/按鈕) */
+        }
+
+        body { 
+            background-color: var(--bg-cream); 
+            color: var(--text-dark); 
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* 卡片風格：圓潤、柔和陰影 */
+        .card { 
+            background-color: var(--card-white); 
+            border-radius: 24px; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid #F3F4F6;
+        }
+
+        /* 隱私模式：模糊效果 */
+        .privacy-mask { transition: filter 0.3s ease; }
+        body.privacy-on .privacy-mask { filter: blur(10px); opacity: 0.7; }
+
+        /* 設定抽屜：明亮風格 */
+        #settings-drawer {
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: -10px 0 25px rgba(0,0,0,0.05);
+        }
+        #settings-drawer.open { transform: translateX(0); }
+
+        /* 生存能量槽：粉嫩漸層 */
+        .survival-track { background: #FFF1F2; border: 1px solid #FECDD3; border-radius: 9999px; }
+        .survival-bar { 
+            background: linear-gradient(90deg, #FDA4AF, var(--macaron-rose));
+            box-shadow: 0 2px 10px rgba(251, 113, 133, 0.3);
+            transition: width 1s ease-in-out;
+            border-radius: 9999px;
+        }
+
+        /* 輸入框美化 */
+        input[type="number"], input[type="text"] {
+            background: #F3F4F6;
+            border: 2px solid transparent;
+            color: var(--text-dark);
+            padding: 12px;
+            border-radius: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        input:focus { border-color: var(--macaron-mint); background: #fff; }
+
+        /* 按鈕與標籤 */
+        .tag-mint { background: #ECFDF5; color: var(--macaron-mint); }
+        .tag-rose { background: #FFF1F2; color: var(--macaron-rose); }
+        .btn-float { 
+            box-shadow: 0 10px 20px -5px rgba(52, 211, 153, 0.4); 
+            background: var(--macaron-mint); 
+            color: white;
+        }
+        .btn-float:hover { transform: translateY(-3px); }
+
+    </style>
+</head>
+<body class="p-4 md:p-8 pb-32">
+
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-end pb-4 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-gray-800">01 理財協議系統</h1>
+                <p class="text-sm text-gray-500 font-medium mt-1">Member Exclusive | 風險管理中樞</p>
+            </div>
+            <div class="flex gap-4 items-center bg-white p-2 rounded-full shadow-sm border border-gray-100">
+                <button onclick="togglePrivacy()" class="text-xs text-gray-500 px-3 py-1.5 bg-gray-100 rounded-full hover:bg-gray-200 transition font-bold">👁️ 隱私模式</button>
+                <div class="text-right px-2">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold">大盤耐震度</p>
+                    <p class="text-2xl font-black" style="color: var(--macaron-mint);"><span id="ui-survival-pc">--</span>%</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="card p-6 lg:col-span-1">
+                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">我的資產組合 (Assets)</h2>
+                <div id="asset-container" class="space-y-4">
+                    </div>
+            </div>
+
+            <div class="card p-8 lg:col-span-2 flex flex-col justify-center items-center relative overflow-hidden bg-gradient-to-br from-white to-green-50/50">
+                <p class="text-sm font-bold text-gray-400 uppercase mb-2 tracking-wider">當前安全維持率</p>
+                <div id="ui-ratio" class="text-8xl md:text-9xl font-black tracking-tighter" style="color: var(--macaron-mint);">--%</div>
+                
+                <div class="w-full mt-10 space-y-3 px-4">
+                    <div class="flex justify-between text-xs font-bold uppercase">
+                        <span class="text-gray-400">生存空間深度</span>
+                        <span style="color: var(--macaron-rose);" id="ui-survival-tag">--%</span>
+                    </div>
+                    <div class="w-full h-6 survival-track relative">
+                        <div id="ui-survival-bar" class="survival-bar h-full w-0"></div>
+                    </div>
+                    <p class="text-center text-xs text-gray-500 font-medium mt-3 bg-rose-50 py-2 rounded-lg">
+                        💡 溫馨提醒：市場需下跌超過 <span class="font-black" style="color: var(--macaron-rose);" id="ui-survival-val">--</span>% 才會觸發追繳通知
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-8 bg-yellow-50/50 border-yellow-100">
+            <h2 class="text-sm font-bold uppercase tracking-wider mb-6" style="color: var(--macaron-peach);">進階槓桿試算 (Simulation)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-2 font-bold uppercase">預計新增借款</label>
+                    <input type="number" id="sim-loan" oninput="run()" placeholder="輸入金額 TWD" class="w-full text-xl font-bold text-gray-700">
+                </div>
+                <div class="md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
+                        <p class="text-xs text-gray-400 uppercase mb-1 font-bold">模擬總負債</p>
+                        <p id="ui-sim-debt" class="text-2xl font-black privacy-mask" style="color: var(--text-dark);">--</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
+                        <p class="text-xs text-gray-400 uppercase mb-1 font-bold">預估新維持率</p>
+                        <p id="ui-sim-ratio" class="text-2xl font-black" style="color: var(--macaron-mint);">--%</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm text-center col-span-2 md:col-span-1">
+                        <p class="text-xs text-gray-400 uppercase mb-1 font-bold">生存邊際變化</p>
+                        <p id="ui-sim-survival" class="text-2xl font-black" style="color: var(--macaron-rose);">--%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-8">
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">市場下跌壓力測試表</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-gray-400 text-xs uppercase border-b border-gray-100">
+                            <th class="pb-4 pl-4 font-bold">市場跌幅</th>
+                            <th class="pb-4 font-bold">預估總市值</th>
+                            <th class="pb-4 pr-4 text-right font-bold">維持率變化</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ui-stress-table" class="text-sm font-bold text-gray-600">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[400px] bg-white z-[200] p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h3 class="text-2xl font-extrabold text-gray-800">⚙️ 系統參數設定</h3>
+            <button onclick="toggleSettings()" class="text-gray-400 hover:text-gray-800 text-2xl bg-gray-100 w-10 h-10 rounded-full">✕</button>
+        </div>
+
+        <div class="space-y-8">
+            <div class="bg-gray-50 p-4 rounded-2xl">
+                <label class="block text-xs text-gray-500 mb-3 font-bold uppercase tracking-widest">🏦 目前總借貸本金 (TWD)</label>
+                <input type="number" id="cfg-debt" class="w-full text-xl font-bold" style="color: var(--text-dark);" placeholder="例如: 800000">
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center px-2">
+                    <label class="text-xs text-gray-500 font-bold uppercase tracking-widest">📈 資產配置明細</label>
+                    <button onclick="addAssetRow()" class="text-xs px-3 py-1.5 rounded-full font-bold tag-mint hover:shadow-sm transition">+ 新增標的</button>
+                </div>
+                <div id="cfg-asset-rows" class="space-y-3">
+                    </div>
+            </div>
+
+            <div class="pt-6">
+                <button onclick="saveAndRun()" class="w-full py-4 rounded-2xl text-white font-bold uppercase tracking-widest text-sm shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1" style="background: var(--macaron-mint);">儲存設定並同步</button>
+                <p class="text-xs text-gray-400 mt-6 text-center">您的數據安全地儲存在本地裝置中，我們不會上傳。</p>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="toggleSettings()" class="fixed bottom-8 right-8 w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all z-[150] btn-float">
+        ⚙️
+    </button>
+
+    <script>
+        // 預設配置 (範例數據改為更通用的例子)
+        let STATE = JSON.parse(localStorage.getItem('than_01_macaron_config')) || {
+            debt: 1000000,
+            assets: [
+                { name: '市值型 ETF (如 0050)', val: 1500000 },
+                { name: '高股息/債券 (防禦)', val: 500000 }
+            ]
+        };
+
+        function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
+        function togglePrivacy() { document.body.classList.toggle('privacy-on'); }
+
+        function addAssetRow(name = '', val = '') {
+            const container = document.getElementById('cfg-asset-rows');
+            const div = document.createElement('div');
+            div.className = "flex gap-2 items-center bg-white p-3 rounded-2xl shadow-sm border border-gray-100";
+            div.innerHTML = `
+                <input type="text" placeholder="名稱 (例如: 台積電)" class="w-7/12 text-sm cfg-a-name font-medium" value="${name}">
+                <input type="number" placeholder="市值" class="w-4/12 text-sm cfg-a-val font-bold text-gray-700" value="${val}">
+                <button onclick="this.parentElement.remove()" class="text-gray-300 hover:text-rose-400 ml-1 text-xl">×</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function saveAndRun() {
+            const names = document.querySelectorAll('.cfg-a-name');
+            const vals = document.querySelectorAll('.cfg-a-val');
+            let assets = [];
+            names.forEach((n, i) => {
+                if (n.value) assets.push({ name: n.value, val: parseFloat(vals[i].value) || 0 });
+            });
+
+            STATE = {
+                debt: parseFloat(document.getElementById('cfg-debt').value) || 0,
+                assets: assets
+            };
+
+            localStorage.setItem('than_01_macaron_config', JSON.stringify(STATE));
+            toggleSettings();
+            run();
+        }
+
+        function run() {
+            const totalAsset = STATE.assets.reduce((sum, a) => sum + a.val, 0);
+            const simLoan = parseFloat(document.getElementById('sim-loan').value) || 0;
+            const totalDebt = STATE.debt + simLoan;
+            
+            let ratio = 0, survival = 0;
+            if (totalDebt > 0) {
+                ratio = Math.round((totalAsset / totalDebt) * 100);
+                survival = Math.round((1 - (160 / ratio)) * 100);
+            } else if (totalAsset > 0) {
+                 ratio = 9999; survival = 100; // 無負債狀態
+            }
+
+            // UI Update
+            document.getElementById('ui-ratio').innerText = (ratio > 2000 ? '>2000' : ratio) + '%';
+            document.getElementById('ui-survival-pc').innerText = survival;
+            document.getElementById('ui-survival-tag').innerText = survival + '%';
+            document.getElementById('ui-survival-val').innerText = survival;
+            document.getElementById('ui-survival-bar').style.width = Math.max(0, Math.min(100, survival)) + '%';
+            
+            document.getElementById('ui-sim-debt').innerText = totalDebt.toLocaleString();
+            document.getElementById('ui-sim-ratio').innerText = (ratio > 2000 ? '>2000' : ratio) + '%';
+            document.getElementById('ui-sim-survival').innerText = survival + '%';
+
+            // Asset List
+            const list = document.getElementById('asset-container');
+            list.innerHTML = '';
+            STATE.assets.forEach(a => {
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 rounded-xl p-4">
+                        <span class="text-sm text-gray-600 font-bold">${a.name}</span>
+                        <span class="text-lg font-bold text-gray-800 privacy-mask">${a.val.toLocaleString()}</span>
+                    </div>
+                `;
+            });
+
+            // Stress Table
+            const tbody = document.getElementById('ui-stress-table');
+            tbody.innerHTML = '';
+            [0, -10, -20, -30, -50, -80].forEach(d => {
+                const sVal = totalAsset * (1 + d/100);
+                let sRatio = totalDebt > 0 ? Math.round((sVal / totalDebt) * 100) : 9999;
+                
+                let colorStyle = `color: var(--macaron-mint);`;
+                if (sRatio < 160) colorStyle = `color: var(--macaron-rose);`;
+                else if (sRatio < 200) colorStyle = `color: var(--macaron-peach);`;
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                        <td class="py-4 pl-4 text-gray-400">${d}%</td>
+                        <td class="py-4 text-gray-700 privacy-mask">${Math.round(sVal).toLocaleString()}</td>
+                        <td class="py-4 pr-4 text-right font-black text-lg" style="${colorStyle}">${sRatio > 2000 ? '>2000' : sRatio}%</td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.onload = () => {
+            document.getElementById('cfg-debt').value = STATE.debt;
+            STATE.assets.forEach(a => addAssetRow(a.name, a.val));
+            run();
+        };
+    </script>
+</body>
+</html>
