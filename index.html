@@ -1,38 +1,130 @@
-<script>
-    function parseCSV(csv) {
-        // 使用更強大的正則表達式來處理 CSV 裡的逗號問題（例如 "1,237,630"）
-        const rows = csv.split('\n').map(row => {
-            const matches = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-            return matches ? matches.map(m => m.replace(/"/g, '')) : row.split(',');
-        });
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>M7 戰略終端 | Than陸仁 監製</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        :root { --m7-green: #10B981; --m7-red: #F43F5E; --m7-dark: #0F172A; }
+        body { background-color: var(--m7-dark); color: #F1F5F9; font-family: 'Inter', sans-serif; }
+        .m7-glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; }
+        .privacy-mask { transition: filter 0.3s; }
+        body.privacy-on .privacy-mask { filter: blur(15px); }
+        #settings-drawer { transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); z-index: 1000; }
+        #settings-drawer.open { transform: translateX(0); }
+    </style>
+</head>
+<body class="p-4 md:p-8 pb-32">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        <header class="flex justify-between items-center pb-6 border-b border-white/10">
+            <div>
+                <h1 class="text-3xl font-black italic tracking-tighter text-emerald-400">M7 STRATEGIC</h1>
+                <p class="text-[9px] font-bold text-gray-600 tracking-[0.3em]">VERSION 7.2 FINAL</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="togglePrivacy()" class="w-10 h-10 m7-glass flex items-center justify-center">👁️</button>
+                <button onclick="toggleSettings()" class="w-10 h-10 m7-glass border-emerald-500/50 border flex items-center justify-center text-xl">⚙️</button>
+            </div>
+        </header>
+
+        <div class="m7-glass p-8 text-center relative overflow-hidden">
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">全域質押維持率</p>
+            <div id="ui-ratio" class="text-8xl font-black tracking-tighter text-emerald-400 privacy-mask">--%</div>
+            <div id="sync-indicator" class="mt-4 text-[10px] text-gray-500 font-bold uppercase tracking-widest">系統待命中...</div>
+        </div>
+
+        <div class="m7-glass p-6 overflow-hidden">
+            <table class="w-full text-left text-sm font-bold">
+                <thead class="text-[10px] text-gray-600 border-b border-white/5 uppercase">
+                    <tr><th class="pb-4">標的</th><th class="pb-4 text-right">目標 %</th><th class="pb-4 text-right">戰略操作</th></tr>
+                </thead>
+                <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-10 shadow-2xl border-l border-white/10">
+        <div class="flex justify-between items-center mb-10 text-white">
+            <h3 class="text-2xl font-black italic">戰略配置中心</h3>
+            <button onclick="toggleSettings()" class="text-3xl">✕</button>
+        </div>
+        <div class="space-y-6">
+            <div class="bg-white/5 p-6 rounded-3xl border border-white/10">
+                <label class="block text-[10px] text-gray-500 font-bold uppercase mb-2">Google Sheets CSV 連結</label>
+                <textarea id="cfg-csv-url" rows="5" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono outline-none border border-white/10"></textarea>
+            </div>
+            <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl shadow-xl">啟動上帝視角同步</button>
+        </div>
+    </div>
+
+    <button onclick="toggleSettings()" class="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-emerald-500 text-white shadow-2xl z-[500] flex items-center justify-center text-2xl animate-bounce">⚙️</button>
+
+    <script>
+        let CONFIG = { csvUrl: localStorage.getItem('than_m7_csv') || '' };
+
+        function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
+        function togglePrivacy() { document.body.classList.toggle('privacy-on'); }
         
-        let assets = [];
-        let totalDebt = 0;
-        let fx = 31.44;
-
-        // 🎯 精準對焦哥的試算表欄位
-        rows.slice(1).forEach((row, index) => {
-            if (row[0] && row[4] && index < 5) { // 限制讀取前 5 個標的 (00675L 到 BOXX)
-                assets.push({
-                    code: row[0],
-                    name: row[1],
-                    price: parseFloat(row[3]) || 0,
-                    shares: parseFloat(row[4]) || 0,
-                    target: parseFloat(row[6]) || 0,
-                    valueTWD: parseFloat(row[5]) || 0,
-                    fx: parseFloat(row[2]) || 1
-                });
-            }
-        });
-
-        // 🎯 抓取 L2 位置的「質押總借款」 (Row 1, Column 11)
-        if (rows[1] && rows[1][11]) {
-            totalDebt = parseFloat(rows[1][11].replace(/,/g, '')) || 0;
+        async function saveAndSync() {
+            CONFIG.csvUrl = document.getElementById('cfg-csv-url').value;
+            localStorage.setItem('than_m7_csv', CONFIG.csvUrl);
+            toggleSettings();
+            await fetchData();
         }
-        
-        // 🎯 抓取 C3 附近的匯率
-        fx = parseFloat(rows[3][2]) || 31.44;
 
-        updateUI(assets, totalDebt, fx);
-    }
-</script>
+        async function fetchData() {
+            if (!CONFIG.csvUrl) return;
+            try {
+                const response = await fetch(CONFIG.csvUrl);
+                const data = await response.text();
+                parseCSV(data);
+                document.getElementById('sync-indicator').innerText = `✅ 數據同步完成: ${new Date().toLocaleTimeString()}`;
+            } catch (e) {
+                document.getElementById('sync-indicator').innerText = `❌ 同步失敗，請檢查連結`;
+            }
+        }
+
+        function parseCSV(csv) {
+            const rows = csv.split('\n').map(row => {
+                const matches = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                return matches ? matches.map(m => m.replace(/"/g, '')) : row.split(',');
+            });
+            
+            let totalAssetValue = 0;
+            let assets = [];
+            // 讀取標的數據 (A2:H6)
+            rows.slice(1, 6).forEach(row => {
+                if (row[0]) {
+                    const val = parseFloat(row[5]) || 0;
+                    totalAssetValue += val;
+                    assets.push({ code: row[0], target: row[6], suggest: row[8], val: val });
+                }
+            });
+
+            // 抓取 L2 的質押借款
+            const totalDebt = parseFloat(rows[1][11].replace(/,/g, '')) || 0;
+            const ratio = totalDebt > 0 ? Math.round((totalAssetValue / totalDebt) * 100) : 9999;
+
+            document.getElementById('ui-ratio').innerText = ratio + '%';
+            document.getElementById('ui-asset-table').innerHTML = assets.map(a => `
+                <tr class="border-b border-white/5">
+                    <td class="py-5">${a.code}</td>
+                    <td class="text-right">${a.target}%</td>
+                    <td class="text-right ${parseFloat(a.suggest) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${a.suggest}</td>
+                </tr>
+            `).join('');
+        }
+
+        window.onload = () => {
+            if (CONFIG.csvUrl) fetchData();
+            setInterval(fetchData, 60000);
+        };
+    </script>
+</body>
+</html>
