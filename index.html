@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M7 戰略終端 v8.2 | Than陸仁</title>
+    <title>M7 戰略終端 | 通用共享版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --m7-emerald: #10B981; --m7-rose: #F43F5E; --m7-bg: #0F172A; }
+        :root { --m7-green: #10B981; --m7-rose: #F43F5E; --m7-bg: #0F172A; }
         body { background-color: var(--m7-bg); color: #E2E8F0; font-family: sans-serif; }
         .m7-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; backdrop-filter: blur(10px); }
         .privacy-mask { transition: filter 0.3s; }
         body.privacy-on .privacy-mask { filter: blur(12px); }
+        #settings-drawer { z-index: 1000; transition: transform 0.4s ease; }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-32">
@@ -18,8 +19,8 @@
     <div class="max-w-6xl mx-auto space-y-6">
         <header class="flex justify-between items-center border-b border-white/10 pb-6">
             <div>
-                <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter">M7 COMMAND CENTER</h1>
-                <p id="ui-sync-status" class="text-[10px] text-gray-600 font-bold uppercase mt-1">v8.2 Radar System Active</p>
+                <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter">M7 UNIVERSAL</h1>
+                <p id="ui-sync-status" class="text-[10px] text-gray-500 font-bold uppercase mt-1">智能偵測系統已啟動</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="document.body.classList.toggle('privacy-on')" class="w-10 h-10 m7-card flex items-center justify-center text-xs">👁️</button>
@@ -29,12 +30,12 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="m7-card p-6 border-l-4 border-emerald-500">
-                <p class="text-[10px] text-gray-500 font-bold uppercase">總擔保品市值</p>
-                <p id="ui-total-assets" class="text-2xl font-black privacy-mask text-emerald-400">NT$ --</p>
+                <p class="text-[10px] text-gray-500 font-bold uppercase">總資產市值</p>
+                <p id="ui-total-assets" class="text-2xl font-black privacy-mask text-emerald-400">--</p>
             </div>
             <div class="m7-card p-6 border-l-4 border-rose-500">
                 <p class="text-[10px] text-gray-500 font-bold uppercase">質押總負債</p>
-                <p id="ui-total-debt" class="text-2xl font-black privacy-mask text-rose-400">NT$ --</p>
+                <p id="ui-total-debt" class="text-2xl font-black privacy-mask text-rose-400">--</p>
             </div>
             <div class="m7-card p-6 bg-gradient-to-br from-slate-800 to-slate-900">
                 <p class="text-[10px] text-gray-500 font-bold uppercase">當前維持率</p>
@@ -43,17 +44,11 @@
         </div>
 
         <div class="m7-card p-8">
-            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-emerald-400">M7 資產再平衡指引</h3>
+            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-emerald-400">資產再平衡指引</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm font-bold">
-                    <thead class="text-gray-600 text-[10px] uppercase border-b border-white/5">
-                        <tr>
-                            <th class="pb-4">代號</th>
-                            <th class="pb-4 text-right">現價</th>
-                            <th class="pb-4 text-right">實際%</th>
-                            <th class="pb-4 text-right">目標%</th>
-                            <th class="pb-4 text-right">建議操作</th>
-                        </tr>
+                    <thead id="ui-table-head" class="text-gray-600 text-[10px] uppercase border-b border-white/5">
+                        <tr><th class="pb-4">代號</th><th class="pb-4 text-right">現價</th><th class="pb-4 text-right">實際%</th><th class="pb-4 text-right">目標%</th><th class="pb-4 text-right">操作建議</th></tr>
                     </thead>
                     <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
                 </table>
@@ -61,18 +56,31 @@
         </div>
 
         <div class="m7-card p-8">
-            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-rose-400">📉 壓力測試模擬 (連動雲端)</h3>
+            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-rose-400">📉 壓力測試</h3>
             <div id="ui-stress-grid" class="grid grid-cols-3 gap-4"></div>
         </div>
     </div>
 
-    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-10 shadow-2xl border-l border-white/10 transition-transform translate-x-full z-[1000]">
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-10 shadow-2xl border-l border-white/10 translate-x-full">
         <div class="flex justify-between items-center mb-10 text-white">
-            <h3 class="text-2xl font-black italic">CONFIG</h3>
+            <h3 class="text-2xl font-black italic uppercase">Terminal Setup</h3>
             <button onclick="toggleSettings()" class="text-3xl">✕</button>
         </div>
-        <textarea id="cfg-csv-url" rows="6" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono mb-6" placeholder="貼上 CSV 連結..."></textarea>
-        <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl">啟動上帝視計算</button>
+        <div class="space-y-6">
+            <div class="bg-white/5 p-6 rounded-3xl border border-white/10">
+                <label class="block text-[10px] text-gray-500 font-bold uppercase mb-2">Google Sheets CSV 連結</label>
+                <textarea id="cfg-csv-url" rows="4" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono outline-none border border-white/10" placeholder="貼上 CSV 連結..."></textarea>
+            </div>
+            <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl shadow-xl active:scale-95 transition-transform">立即連動數據</button>
+            <div class="mt-10 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                <p class="text-xs font-bold text-emerald-400 mb-2">💡 如何建立通用版試算表？</p>
+                <ul class="text-[10px] text-gray-400 space-y-1 list-disc pl-4">
+                    <li>表格需包含：代號、現價、市值、目標%、建議操作</li>
+                    <li>需包含關鍵字：質押總借款、目前維持率</li>
+                    <li>將 Google 試算表「發佈到網路」並選擇 CSV 格式</li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -86,10 +94,8 @@
             await fetchData();
         }
 
-        // 強效數值提取器：過濾所有雜質符號
         function cleanVal(str) {
             if (!str) return 0;
-            // 移除逗號、百分比、美金符號，只留下數字與小數點
             const cleaned = str.toString().replace(/[%,$]/g, '').replace(/,/g, '').trim();
             return parseFloat(cleaned) || 0;
         }
@@ -100,55 +106,73 @@
             try {
                 const response = await fetch(CONFIG.csvUrl + (CONFIG.csvUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime());
                 const csvData = await response.text();
-                processData(csvData);
+                processUniversalData(csvData);
                 status.innerText = `Updated: ${new Date().toLocaleTimeString()}`;
-            } catch (e) { status.innerText = "❌ Sync Failed"; }
+            } catch (e) { status.innerText = "❌ 連線失敗"; }
         }
 
-        function processData(csv) {
-            // 解析 CSV 並移除所有多餘引號
+        function processUniversalData(csv) {
+            // 解析 CSV 處理引號
             const rows = csv.split(/\r?\n/).filter(r => r.trim()).map(row => {
                 return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
             });
-            
-            let assets = [];
-            let totalAssetValue = 0;
-            let debt = 0;
-            let ratio = "--";
-            let stress = [];
 
-            // 🎯 雷達掃描：搜尋整張表獲取關鍵指標
+            // 🎯 智能偵測欄位索引
+            let colMap = { code: -1, price: -1, value: -1, target: -1, actual: -1, suggest: -1 };
+            let headerRowIdx = -1;
+
             rows.forEach((row, rIdx) => {
+                if (row.includes("代號") || row.includes("Ticker")) {
+                    headerRowIdx = rIdx;
+                    row.forEach((cell, cIdx) => {
+                        if (cell.includes("代號") || cell.includes("Ticker")) colMap.code = cIdx;
+                        if (cell.includes("現價") || cell.includes("Price")) colMap.price = cIdx;
+                        if (cell.includes("台幣市值") || cell.includes("市值")) colMap.value = cIdx;
+                        if (cell.includes("目標")) colMap.target = cIdx;
+                        if (cell.includes("實際")) colMap.actual = cIdx;
+                        if (cell.includes("建議")) colMap.suggest = cIdx;
+                    });
+                }
+            });
+
+            // 🎯 提取關鍵指標 (搜尋全表)
+            let debt = 0, ratio = "--", stress = [];
+            rows.forEach(row => {
                 row.forEach((cell, cIdx) => {
                     if (cell === "質押總借款") debt = cleanVal(row[cIdx + 1]);
                     if (cell === "目前維持率") ratio = row[cIdx + 1];
-                    if (cell === "股災 -10%") stress.push({ label: "-10%", val: row[cIdx + 1] });
-                    if (cell === "股災 -20%") stress.push({ label: "-20%", val: row[cIdx + 1] });
-                    if (cell === "股災 -30%") stress.push({ label: "-30%", val: row[cIdx + 1] });
+                    if (cell.includes("股災")) stress.push({ label: cell.replace("股災 ", ""), val: row[cIdx + 1] });
                 });
             });
 
-            // 🎯 讀取資產清單 (假設在 A2:I6 區間)
-            for (let i = 1; i <= 5; i++) {
-                if (rows[i] && rows[i][0]) {
-                    const assetVal = cleanVal(rows[i][5]);
-                    totalAssetValue += assetVal;
-                    assets.push({
-                        code: rows[i][0], price: rows[i][3],
-                        actual: rows[i][7], target: rows[i][6],
-                        suggest: rows[i][8]
-                    });
+            // 🎯 提取資產數據
+            let assets = [], totalAssetValue = 0;
+            if (headerRowIdx !== -1) {
+                for (let i = headerRowIdx + 1; i < rows.length; i++) {
+                    const r = rows[i];
+                    if (r[colMap.code]) {
+                        const v = cleanVal(r[colMap.value]);
+                        totalAssetValue += v;
+                        assets.push({
+                            code: r[colMap.code],
+                            price: r[colMap.price] || "--",
+                            actual: r[colMap.actual] || "--",
+                            target: r[colMap.target] || "--",
+                            suggest: r[colMap.suggest] || "--",
+                            val: v
+                        });
+                    } else { break; } // 碰到空行停止
                 }
             }
 
-            // 更新 UI
+            // 更新介面
             document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalAssetValue).toLocaleString()}`;
             document.getElementById('ui-total-debt').innerText = `NT$ ${debt.toLocaleString()}`;
             document.getElementById('ui-ratio').innerText = ratio.includes('%') ? ratio : ratio + '%';
             document.getElementById('ui-ratio').style.color = cleanVal(ratio) < 180 ? 'var(--m7-rose)' : 'var(--m7-emerald)';
 
             document.getElementById('ui-asset-table').innerHTML = assets.map(a => `
-                <tr class="border-b border-white/5 text-xs md:text-sm">
+                <tr class="border-b border-white/5">
                     <td class="py-4 font-bold">${a.code}</td>
                     <td class="text-right">${a.price}</td>
                     <td class="text-right text-gray-400">${a.actual}</td>
