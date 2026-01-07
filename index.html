@@ -14,29 +14,26 @@
         #settings-drawer { transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         #settings-drawer.open { transform: translateX(0); }
         .survival-bar { background: linear-gradient(90deg, #FDA4AF, var(--macaron-rose)); transition: width 1s; border-radius: 99px; }
-        input { background: #F3F4F6; border-radius: 16px; padding: 12px; outline: none; border: 2px solid transparent; }
+        input { background: #F3F4F6; border-radius: 16px; padding: 12px; outline: none; border: 2px solid transparent; width: 100%; }
         input:focus { border-color: var(--macaron-mint); background: #fff; }
-        /* 分享按鈕特效 */
-        .share-btn { background: linear-gradient(135deg, #60A5FA, #34D399); box-shadow: 0 10px 20px rgba(96, 165, 250, 0.2); transition: all 0.3s; }
-        .share-btn:hover { transform: scale(1.05); box-shadow: 0 15px 30px rgba(52, 211, 153, 0.3); }
+        .share-btn { background: linear-gradient(135deg, #60A5FA, #34D399); transition: all 0.3s; box-shadow: 0 10px 20px rgba(96, 165, 250, 0.2); }
+        .share-btn:hover { transform: scale(1.05); }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-32">
 
     <div class="max-w-5xl mx-auto space-y-6">
-        <header class="flex justify-between items-end gap-4">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
                 <h1 class="text-3xl font-black">質押安全壓力表</h1>
-
-<p class="text-sm text-emerald-500 font-bold mt-1">
-    <a href="https://www.youtube.com/@ericZang1985
-" target="_blank" class="hover:underline">Than 陸仁 | 戰略共享版 ↗</a>
-</p>
+                <p class="text-sm text-emerald-500 font-bold mt-1">
+                    <a href="https://www.youtube.com/@ThanLuren" target="_blank" class="hover:underline">Than 陸仁 | 戰略共享版 ↗</a>
+                </p>
             </div>
-            <div class="flex gap-4 items-center bg-white p-2 rounded-full shadow-sm">
-                <button onclick="togglePrivacy()" class="text-xs text-gray-500 px-4 py-2 bg-gray-50 rounded-full font-bold">👁️ 隱私模式</button>
+            <div class="flex gap-4 items-center bg-white p-2 rounded-full shadow-sm border border-gray-100">
+                <button onclick="togglePrivacy()" class="text-xs text-gray-500 px-4 py-2 bg-gray-50 rounded-full font-bold hover:bg-gray-100">👁️ 隱私模式</button>
                 <div class="text-right px-3 border-l">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">耐震度</p>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">耐震度</p>
                     <p class="text-2xl font-black text-emerald-400"><span id="ui-survival-pc">--</span>%</p>
                 </div>
             </div>
@@ -44,58 +41,76 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="card p-6 lg:col-span-1">
-                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">資產配置</h2>
+                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 italic">資產明細</h2>
                 <div id="asset-container" class="space-y-4"></div>
             </div>
-            <div class="card p-8 lg:col-span-2 flex flex-col justify-center items-center bg-gradient-to-br from-white to-green-50/20">
-                <p class="text-sm font-bold text-gray-400 uppercase mb-2 italic">當前安全維持率</p>
+            <div class="card p-8 lg:col-span-2 flex flex-col justify-center items-center">
+                <p class="text-sm font-bold text-gray-400 uppercase mb-2">當前維持率</p>
                 <div id="ui-ratio" class="text-8xl md:text-9xl font-black text-emerald-400 tracking-tighter">--%</div>
                 <div class="w-full mt-10 space-y-4 px-4">
                     <div class="flex justify-between text-xs font-bold uppercase"><span class="text-gray-400">生存空間深度</span><span class="text-rose-400" id="ui-survival-tag">--%</span></div>
                     <div class="w-full h-8 bg-rose-50 rounded-full border border-rose-100 overflow-hidden"><div id="ui-survival-bar" class="survival-bar h-full w-0"></div></div>
-                    <p class="text-center text-xs text-gray-500 font-medium mt-4 italic">💡 大盤需下跌超過 <span class="text-rose-500 font-black" id="ui-survival-val">--</span>% 觸發追繳警示</p>
+                    <p class="text-center text-xs text-gray-500 mt-4 italic">💡 市場需跌超過 <span class="text-rose-500 font-black" id="ui-survival-val">--</span>% 觸發追繳警示</p>
                 </div>
             </div>
         </div>
 
         <div class="card p-8 bg-amber-50/40 border-amber-100">
-            <h2 class="text-sm font-bold text-amber-500 uppercase tracking-wider mb-6">⚡ 模擬壓力試算</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div><label class="block text-xs text-gray-400 mb-2 font-bold">擬新增借款金額</label><input type="number" id="sim-loan" oninput="run()" placeholder="TWD" class="w-full text-xl font-bold"></div>
-                <div class="md:col-span-2 grid grid-cols-2 gap-4">
-                    <div class="bg-white p-5 rounded-2xl shadow-sm"><p class="text-[10px] text-gray-400 font-bold uppercase">總負債</p><p id="ui-sim-debt" class="text-2xl font-black privacy-mask">--</p></div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm"><p class="text-[10px] text-gray-400 font-bold uppercase">模擬維持率</p><p id="ui-sim-ratio" class="text-2xl font-black text-emerald-400">--%</p></div>
+            <h2 class="text-sm font-bold text-amber-500 uppercase tracking-wider mb-6 italic">⚡ 擬新增質借試算</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                <div class="md:col-span-1"><label class="block text-xs text-gray-400 mb-2 font-bold uppercase">新增借款</label><input type="number" id="sim-loan" oninput="run()" placeholder="TWD" class="font-bold"></div>
+                <div class="md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm"><p class="text-[10px] text-gray-400 font-bold uppercase mb-1">總負債</p><p id="ui-sim-debt" class="text-xl font-black privacy-mask text-gray-700">--</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm"><p class="text-[10px] text-gray-400 font-bold uppercase mb-1">模擬維持率</p><p id="ui-sim-ratio" class="text-xl font-black text-emerald-400">--%</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm col-span-2 md:col-span-1"><p class="text-[10px] text-gray-400 font-bold uppercase mb-1">生存變化</p><p id="ui-sim-survival" class="text-xl font-black text-rose-400">--%</p></div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card p-8">
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 italic">📉 市場極端下跌壓力測試表</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-gray-400 text-xs uppercase border-b border-gray-100">
+                            <th class="pb-4 pl-4 font-bold">市場跌幅</th>
+                            <th class="pb-4 font-bold">預估市值</th>
+                            <th class="pb-4 pr-4 text-right font-bold">預估維持率</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ui-stress-table" class="text-sm font-bold text-gray-600">
+                        </tbody>
+                </table>
             </div>
         </div>
 
         <footer class="mt-12 text-center pb-12">
             <div class="inline-block p-1.5 bg-white rounded-[32px] shadow-md border border-gray-100">
-                <button onclick="shareTool()" class="share-btn flex items-center gap-3 px-10 py-5 rounded-[28px] text-white font-bold text-lg">
+                <button onclick="shareTool()" class="share-btn flex items-center gap-3 px-10 py-5 rounded-[28px] text-white font-bold text-lg transition-all">
                     <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
                     <span id="share-text">分享壓力表 | 建立防禦體系</span>
                 </button>
             </div>
-            <p class="text-[10px] text-gray-300 mt-8 font-black uppercase tracking-[0.4em]">Strategic Terminal | Than Luren v4.4</p>
+            <p class="text-[10px] text-gray-300 mt-8 font-black uppercase tracking-[0.4em]">Than Luren v4.5 Final</p>
         </footer>
     </div>
 
     <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[420px] bg-white z-[200] p-10 overflow-y-auto shadow-2xl">
-        <div class="flex justify-between items-center mb-10"><h3 class="text-2xl font-black italic">⚙️ 參數設定</h3><button onclick="toggleSettings()" class="text-gray-300 text-3xl font-light">✕</button></div>
+        <div class="flex justify-between items-center mb-10"><h3 class="text-2xl font-black italic">⚙️ 參數設定</h3><button onclick="toggleSettings()" class="text-gray-300 text-3xl">✕</button></div>
         <div class="space-y-8">
-            <div class="bg-gray-50 p-6 rounded-3xl"><label class="block text-xs text-gray-400 mb-2 font-bold uppercase italic">目前總借貸本金 (TWD)</label><input type="number" id="cfg-debt" class="w-full text-2xl font-black bg-white border border-gray-100"></div>
+            <div class="bg-gray-50 p-6 rounded-3xl"><label class="block text-xs text-gray-400 mb-2 font-bold uppercase italic">目前總借貸本金</label><input type="number" id="cfg-debt" class="text-2xl font-black bg-white"></div>
             <div class="space-y-4">
-                <div class="flex justify-between items-center"><label class="text-xs text-gray-400 font-bold uppercase italic">資產配置明細</label><button onclick="addAssetRow()" class="text-xs px-4 py-2 rounded-full font-bold bg-emerald-50 text-emerald-500 border border-emerald-100">+ 新增標的</button></div>
+                <div class="flex justify-between items-center"><label class="text-xs text-gray-400 font-bold uppercase italic">資產明細</label><button onclick="addAssetRow()" class="text-xs px-4 py-2 rounded-full font-bold bg-emerald-50 text-emerald-500 border border-emerald-100">+ 新增標的</button></div>
                 <div id="cfg-asset-rows" class="space-y-3"></div>
             </div>
-            <button onclick="saveAndRun()" class="w-full py-5 rounded-3xl text-white font-bold bg-emerald-400 shadow-xl shadow-emerald-100 hover:bg-emerald-500 transition-all">儲存設定並同步</button>
+            <button onclick="saveAndRun()" class="w-full py-5 rounded-3xl text-white font-bold bg-emerald-400 shadow-xl shadow-emerald-100">儲存並同步</button>
         </div>
     </div>
 
     <button onclick="toggleSettings()" class="fixed bottom-8 right-8 w-16 h-16 rounded-full flex items-center justify-center text-2xl z-[150] bg-emerald-400 text-white shadow-2xl transition-transform hover:scale-110">⚙️</button>
 
     <script>
-        let STATE = JSON.parse(localStorage.getItem('than_v44_data')) || { debt: 1000000, assets: [{ name: '市值型資產', val: 1800000 }, { name: '防禦型資產', val: 400000 }] };
+        let STATE = JSON.parse(localStorage.getItem('than_v45_data')) || { debt: 1000000, assets: [{ name: '市值型資產', val: 1800000 }, { name: '防禦型資產', val: 400000 }] };
         function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
         function togglePrivacy() { document.body.classList.toggle('privacy-on'); }
         function addAssetRow(name = '', val = '') {
@@ -113,7 +128,7 @@
             let assets = [];
             names.forEach((n, i) => { if (n.value) assets.push({ name: n.value, val: parseFloat(vals[i].value) || 0 }); });
             STATE = { debt: parseFloat(document.getElementById('cfg-debt').value) || 0, assets: assets };
-            localStorage.setItem('than_v44_data', JSON.stringify(STATE));
+            localStorage.setItem('than_v45_data', JSON.stringify(STATE));
             toggleSettings(); run();
         }
         function run() {
@@ -122,6 +137,7 @@
             const totalDebt = STATE.debt + simLoan;
             const ratio = totalDebt > 0 ? Math.round((totalAsset / totalDebt) * 100) : 9999;
             const survival = Math.round((1 - (160 / ratio)) * 100);
+
             document.getElementById('ui-ratio').innerText = (ratio > 2000 ? '>2000' : ratio) + '%';
             document.getElementById('ui-survival-pc').innerText = survival;
             document.getElementById('ui-survival-tag').innerText = survival + '%';
@@ -129,20 +145,35 @@
             document.getElementById('ui-survival-bar').style.width = Math.max(0, Math.min(100, survival)) + '%';
             document.getElementById('ui-sim-debt').innerText = totalDebt.toLocaleString();
             document.getElementById('ui-sim-ratio').innerText = (ratio > 2000 ? '>2000' : ratio) + '%';
+            document.getElementById('ui-sim-survival').innerText = survival + '%';
+
             const list = document.getElementById('asset-container');
             list.innerHTML = '';
             STATE.assets.forEach(a => {
                 list.innerHTML += `<div class="flex justify-between items-center bg-gray-50 rounded-xl p-4 border border-gray-100"><span class="text-xs text-gray-400 font-bold">${a.name}</span><span class="text-lg font-black privacy-mask">${a.val.toLocaleString()}</span></div>`;
             });
+
+            // 重新填入壓力測試表內容
+            const tbody = document.getElementById('ui-stress-table');
+            tbody.innerHTML = '';
+            [0, -10, -20, -30, -50, -80].forEach(d => {
+                const sVal = totalAsset * (1 + d/100);
+                const sRatio = totalDebt > 0 ? Math.round((sVal / totalDebt) * 100) : 9999;
+                let c = sRatio < 160 ? 'text-rose-500' : (sRatio < 200 ? 'text-amber-500' : 'text-emerald-500');
+                tbody.innerHTML += `<tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                    <td class="py-5 pl-4 text-gray-400 font-bold">${d}%</td>
+                    <td class="py-5 text-gray-600 font-bold privacy-mask">${Math.round(sVal).toLocaleString()}</td>
+                    <td class="py-5 pr-4 text-right font-black text-lg ${c}">${sRatio > 2000 ? '>2000' : sRatio}%</td>
+                </tr>`;
+            });
         }
-        // 分享功能：複製連結到剪貼簿
         function shareTool() {
             const url = window.location.href;
-            navigator.clipboard.writeText(url).then(() => {
+            const content = "推薦這個 Than 陸仁開發的【質押安全壓力表】，算維持率超好用： " + url;
+            navigator.clipboard.writeText(content).then(() => {
                 const btnText = document.getElementById('share-text');
-                const originalText = btnText.innerText;
-                btnText.innerText = "✅ 網址已複製！去分享吧";
-                setTimeout(() => { btnText.innerText = originalText; }, 3000);
+                const old = btnText.innerText; btnText.innerText = "✅ 推薦文已複製！去分享吧";
+                setTimeout(() => { btnText.innerText = old; }, 3000);
             });
         }
         window.onload = () => {
