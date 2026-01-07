@@ -1,33 +1,38 @@
-// 核心解析邏輯 (請直接看這部分，確保格子對齊)
-function parseCSV(csv) {
-    const rows = csv.split('\n').map(row => row.split(','));
-    
-    let assets = [];
-    let totalDebt = 0;
-    let fx = 31.42; // 預設匯率
+<script>
+    function parseCSV(csv) {
+        // 使用更強大的正則表達式來處理 CSV 裡的逗號問題（例如 "1,237,630"）
+        const rows = csv.split('\n').map(row => {
+            const matches = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+            return matches ? matches.map(m => m.replace(/"/g, '')) : row.split(',');
+        });
+        
+        let assets = [];
+        let totalDebt = 0;
+        let fx = 31.44;
 
-    // 1. 抓資產資料 (從第 1 列開始，避開標題)
-    // 假設資料在 A 到 G 欄
-    for (let i = 1; i <= 5; i++) {
-        let row = rows[i];
-        if (row && row[0]) {
-            assets.push({
-                code: row[0],
-                name: row[1],
-                price: parseFloat(row[3]) || 0,
-                shares: parseFloat(row[4]) || 0,
-                target: parseFloat(row[6]) || 0,
-                valueTWD: parseFloat(row[5]) || 0,
-                fx: parseFloat(row[2]) || 1
-            });
+        // 🎯 精準對焦哥的試算表欄位
+        rows.slice(1).forEach((row, index) => {
+            if (row[0] && row[4] && index < 5) { // 限制讀取前 5 個標的 (00675L 到 BOXX)
+                assets.push({
+                    code: row[0],
+                    name: row[1],
+                    price: parseFloat(row[3]) || 0,
+                    shares: parseFloat(row[4]) || 0,
+                    target: parseFloat(row[6]) || 0,
+                    valueTWD: parseFloat(row[5]) || 0,
+                    fx: parseFloat(row[2]) || 1
+                });
+            }
+        });
+
+        // 🎯 抓取 L2 位置的「質押總借款」 (Row 1, Column 11)
+        if (rows[1] && rows[1][11]) {
+            totalDebt = parseFloat(rows[1][11].replace(/,/g, '')) || 0;
         }
+        
+        // 🎯 抓取 C3 附近的匯率
+        fx = parseFloat(rows[3][2]) || 31.44;
+
+        updateUI(assets, totalDebt, fx);
     }
-
-    // 2. 抓質押借款 (從第 L2 抓取，即 rows[1][11])
-    totalDebt = parseFloat(rows[1][11]) || 0;
-    
-    // 3. 抓匯率 (假設在 I4 附近，哥可以自己改坐標)
-    fx = parseFloat(rows[3][2]) || 31.42; 
-
-    updateUI(assets, totalDebt, fx);
-}
+</script>
