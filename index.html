@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>質押安全壓力表 | Than 陸仁 監製</title>
+    <title>質押安全壓力表 | Than陸仁 監製</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --bg-cream: #F9FAFB; --macaron-mint: #34D399; --macaron-rose: #FB7185; }
@@ -14,10 +14,9 @@
         #settings-drawer { transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         #settings-drawer.open { transform: translateX(0); }
         .survival-bar { background: linear-gradient(90deg, #FDA4AF, var(--macaron-rose)); transition: width 1s; border-radius: 99px; }
-        input { background: #F3F4F6; border-radius: 16px; padding: 12px; outline: none; border: 2px solid transparent; width: 100%; }
+        input { background: #F3F4F6; border-radius: 16px; padding: 12px; outline: none; border: 2px solid transparent; width: 100%; font-weight: bold; }
         input:focus { border-color: var(--macaron-mint); background: #fff; }
         .share-btn { background: linear-gradient(135deg, #60A5FA, #34D399); transition: all 0.3s; box-shadow: 0 10px 20px rgba(96, 165, 250, 0.2); }
-        .share-btn:hover { transform: scale(1.05); }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-32">
@@ -27,13 +26,13 @@
             <div>
                 <h1 class="text-3xl font-black">質押安全壓力表</h1>
                 <p class="text-sm text-emerald-500 font-bold mt-1">
-                    <a href="https://www.youtube.com/@ThanLuren" target="_blank" class="hover:underline">Than 陸仁 | 戰略共享版 ↗</a>
+                    <a href="https://www.youtube.com/@ericZang1985" target="_blank" class="hover:underline">Than陸仁 | 戰略共享版 ↗</a>
                 </p>
             </div>
             <div class="flex gap-4 items-center bg-white p-2 rounded-full shadow-sm border border-gray-100">
-                <button onclick="togglePrivacy()" class="text-xs text-gray-500 px-4 py-2 bg-gray-50 rounded-full font-bold hover:bg-gray-100">👁️ 隱私模式</button>
+                <button onclick="togglePrivacy()" class="text-xs text-gray-500 px-4 py-2 bg-gray-50 rounded-full font-bold">👁️ 隱私模式</button>
                 <div class="text-right px-3 border-l">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase">耐震度</p>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">耐震度</p>
                     <p class="text-2xl font-black text-emerald-400"><span id="ui-survival-pc">--</span>%</p>
                 </div>
             </div>
@@ -56,9 +55,9 @@
         </div>
 
         <div class="card p-8 bg-amber-50/40 border-amber-100">
-            <h2 class="text-sm font-bold text-amber-500 uppercase tracking-wider mb-6 italic">⚡ 擬新增質借試算</h2>
+            <h2 class="text-sm font-bold text-amber-500 uppercase tracking-wider mb-6 italic text-center md:text-left">⚡ 擬新增質借試算</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
-                <div class="md:col-span-1"><label class="block text-xs text-gray-400 mb-2 font-bold uppercase">新增借款</label><input type="number" id="sim-loan" oninput="run()" placeholder="TWD" class="font-bold"></div>
+                <div class="md:col-span-1"><label class="block text-xs text-gray-400 mb-2 font-bold uppercase">新增借款</label><input type="number" id="sim-loan" oninput="run()" placeholder="TWD"></div>
                 <div class="md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div class="bg-white p-5 rounded-2xl shadow-sm"><p class="text-[10px] text-gray-400 font-bold uppercase mb-1">總負債</p><p id="ui-sim-debt" class="text-xl font-black privacy-mask text-gray-700">--</p></div>
                     <div class="bg-white p-5 rounded-2xl shadow-sm"><p class="text-[10px] text-gray-400 font-bold uppercase mb-1">模擬維持率</p><p id="ui-sim-ratio" class="text-xl font-black text-emerald-400">--%</p></div>
@@ -67,13 +66,13 @@
             </div>
         </div>
 
-        <div class="card p-8">
+        <div class="card p-8 overflow-hidden">
             <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 italic">📉 市場極端下跌壓力測試表</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
                     <thead>
                         <tr class="text-gray-400 text-xs uppercase border-b border-gray-100">
-                            <th class="pb-4 pl-4 font-bold">市場跌幅</th>
+                            <th class="pb-4 pl-4 font-bold">跌幅</th>
                             <th class="pb-4 font-bold">預估市值</th>
                             <th class="pb-4 pr-4 text-right font-bold">預估維持率</th>
                         </tr>
@@ -91,7 +90,7 @@
                     <span id="share-text">分享壓力表 | 建立防禦體系</span>
                 </button>
             </div>
-            <p class="text-[10px] text-gray-300 mt-8 font-black uppercase tracking-[0.4em]">Than Luren v4.5 Final</p>
+            <p class="text-[10px] text-gray-300 mt-8 font-black uppercase tracking-[0.4em]">Strategic Terminal | Than陸仁 v4.6</p>
         </footer>
     </div>
 
@@ -110,15 +109,15 @@
     <button onclick="toggleSettings()" class="fixed bottom-8 right-8 w-16 h-16 rounded-full flex items-center justify-center text-2xl z-[150] bg-emerald-400 text-white shadow-2xl transition-transform hover:scale-110">⚙️</button>
 
     <script>
-        let STATE = JSON.parse(localStorage.getItem('than_v45_data')) || { debt: 1000000, assets: [{ name: '市值型資產', val: 1800000 }, { name: '防禦型資產', val: 400000 }] };
+        let STATE = JSON.parse(localStorage.getItem('than_v46_data')) || { debt: 1000000, assets: [{ name: '市值型資產', val: 1800000 }, { name: '防禦型資產', val: 400000 }] };
         function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('open'); }
         function togglePrivacy() { document.body.classList.toggle('privacy-on'); }
         function addAssetRow(name = '', val = '') {
             const container = document.getElementById('cfg-asset-rows');
             const div = document.createElement('div');
             div.className = "flex gap-2 items-center bg-gray-50 p-4 rounded-2xl border border-gray-100";
-            div.innerHTML = `<input type="text" placeholder="標的" class="w-7/12 text-sm cfg-a-name font-bold bg-white" value="${name}">
-                             <input type="number" placeholder="市值" class="w-4/12 text-sm cfg-a-val font-bold bg-white" value="${val}">
+            div.innerHTML = `<input type="text" placeholder="標的" class="w-7/12 text-sm cfg-a-name bg-white" value="${name}">
+                             <input type="number" placeholder="市值" class="w-4/12 text-sm cfg-a-val bg-white" value="${val}">
                              <button onclick="this.parentElement.remove()" class="text-gray-300 text-2xl ml-2 hover:text-rose-400">×</button>`;
             container.appendChild(div);
         }
@@ -128,7 +127,7 @@
             let assets = [];
             names.forEach((n, i) => { if (n.value) assets.push({ name: n.value, val: parseFloat(vals[i].value) || 0 }); });
             STATE = { debt: parseFloat(document.getElementById('cfg-debt').value) || 0, assets: assets };
-            localStorage.setItem('than_v45_data', JSON.stringify(STATE));
+            localStorage.setItem('than_v46_data', JSON.stringify(STATE));
             toggleSettings(); run();
         }
         function run() {
@@ -153,23 +152,26 @@
                 list.innerHTML += `<div class="flex justify-between items-center bg-gray-50 rounded-xl p-4 border border-gray-100"><span class="text-xs text-gray-400 font-bold">${a.name}</span><span class="text-lg font-black privacy-mask">${a.val.toLocaleString()}</span></div>`;
             });
 
-            // 重新填入壓力測試表內容
+            // 壓力測試表生成邏輯 (確保一定會執行)
             const tbody = document.getElementById('ui-stress-table');
-            tbody.innerHTML = '';
-            [0, -10, -20, -30, -50, -80].forEach(d => {
-                const sVal = totalAsset * (1 + d/100);
-                const sRatio = totalDebt > 0 ? Math.round((sVal / totalDebt) * 100) : 9999;
-                let c = sRatio < 160 ? 'text-rose-500' : (sRatio < 200 ? 'text-amber-500' : 'text-emerald-500');
-                tbody.innerHTML += `<tr class="border-b border-gray-50 hover:bg-gray-50 transition">
-                    <td class="py-5 pl-4 text-gray-400 font-bold">${d}%</td>
-                    <td class="py-5 text-gray-600 font-bold privacy-mask">${Math.round(sVal).toLocaleString()}</td>
-                    <td class="py-5 pr-4 text-right font-black text-lg ${c}">${sRatio > 2000 ? '>2000' : sRatio}%</td>
-                </tr>`;
-            });
+            if (tbody) {
+                let rows = '';
+                [0, -10, -20, -30, -50, -80].forEach(d => {
+                    const sVal = totalAsset * (1 + d/100);
+                    const sRatio = totalDebt > 0 ? Math.round((sVal / totalDebt) * 100) : 9999;
+                    let c = sRatio < 160 ? 'text-rose-500' : (sRatio < 200 ? 'text-amber-500' : 'text-emerald-500');
+                    rows += `<tr class="border-b border-gray-50">
+                        <td class="py-5 pl-4 text-gray-400 font-bold">${d}%</td>
+                        <td class="py-5 text-gray-600 font-bold privacy-mask">${Math.round(sVal).toLocaleString()}</td>
+                        <td class="py-5 pr-4 text-right font-black text-lg ${c}">${sRatio > 2000 ? '>2000' : sRatio}%</td>
+                    </tr>`;
+                });
+                tbody.innerHTML = rows;
+            }
         }
         function shareTool() {
             const url = window.location.href;
-            const content = "推薦這個 Than 陸仁開發的【質押安全壓力表】，算維持率超好用： " + url;
+            const content = "推薦這個 Than陸仁開發的【質押安全壓力表】，算維持率超好用： " + url;
             navigator.clipboard.writeText(content).then(() => {
                 const btnText = document.getElementById('share-text');
                 const old = btnText.innerText; btnText.innerText = "✅ 推薦文已複製！去分享吧";
