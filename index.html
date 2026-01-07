@@ -5,72 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>M7 戰略終端 | Than陸仁 監製</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --m7-green: #10B981; --m7-dark: #0F172A; }
-        body { background-color: var(--m7-dark); color: #F1F5F9; }
-        /* 讓齒輪按鈕永遠在最前面 */
-        #settings-drawer { z-index: 9999 !important; }
+        :root { --m7-green: #10B981; --m7-dark: #0F172A; --m7-red: #F43F5E; }
+        body { background-color: var(--m7-dark); color: #F1F5F9; font-family: sans-serif; }
         .m7-glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; }
-        /* 讓右下角齒輪跳動，提醒點火 */
-        .gear-pulse { animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        #settings-drawer { z-index: 9999; transition: transform 0.4s ease; }
+        .translate-x-full { transform: translateX(100%); }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 pb-32">
 
-    <div class="max-w-6xl mx-auto">
-        <header class="flex justify-between items-center mb-8 pb-4 border-b border-white/10">
+    <div class="max-w-6xl mx-auto space-y-6">
+        <header class="flex justify-between items-center pb-6 border-b border-white/10">
             <div>
                 <h1 class="text-3xl font-black italic text-emerald-400">M7 STRATEGIC</h1>
-                <p class="text-[10px] font-bold text-gray-600 tracking-[0.3em]">DESKTOP COMMAND v7.2</p>
+                <p id="ui-last-update" class="text-[9px] font-bold text-gray-600 tracking-[0.2em]">WAITING FOR CLOUD...</p>
             </div>
-            <button onclick="toggleSettings()" class="w-12 h-12 m7-glass border-emerald-500/50 border flex items-center justify-center text-2xl hover:bg-emerald-500/10 transition-all">⚙️</button>
+            <button onclick="toggleSettings()" class="w-12 h-12 m7-glass border-emerald-500/50 border flex items-center justify-center text-2xl">⚙️</button>
         </header>
 
-        <div class="m7-glass p-12 text-center mb-6">
-            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">全域質押維持率</p>
-            <div id="ui-ratio" class="text-9xl font-black text-emerald-400">--%</div>
-            <div id="sync-indicator" class="mt-6 text-[11px] text-gray-500 font-mono italic">SYSTEM STANDBY...</div>
+        <div class="m7-glass p-12 text-center">
+            <p class="text-xs font-bold text-gray-500 uppercase mb-4">全域質押維持率</p>
+            <div id="ui-ratio" class="text-8xl font-black text-emerald-400">--%</div>
+            <div id="ui-total-assets" class="mt-4 text-sm font-bold text-gray-400">市值: --</div>
         </div>
 
-        <div class="m7-glass p-8">
+        <div class="m7-glass p-6 overflow-hidden">
             <table class="w-full text-left text-sm font-bold">
                 <thead class="text-[10px] text-gray-600 border-b border-white/5 uppercase">
                     <tr><th class="pb-4">標的</th><th class="pb-4 text-right">目標 %</th><th class="pb-4 text-right">戰略操作</th></tr>
                 </thead>
-                <tbody id="ui-asset-table" class="divide-y divide-white/5">
-                    <tr><td colspan="3" class="py-10 text-center text-gray-500">請點擊齒輪貼入 CSV 連結以同步數據</td></tr>
-                </tbody>
+                <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-slate-900 p-10 shadow-2xl border-l border-white/10 transition-transform duration-500 translate-x-full">
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-10 shadow-2xl border-l border-white/10 translate-x-full">
         <div class="flex justify-between items-center mb-10 text-white">
-            <h3 class="text-2xl font-black italic tracking-tighter">戰略配置中心</h3>
-            <button onclick="toggleSettings()" class="text-3xl hover:text-rose-400">✕</button>
+            <h3 class="text-2xl font-black italic">戰略配置中心</h3>
+            <button onclick="toggleSettings()" class="text-3xl">✕</button>
         </div>
         <div class="space-y-6">
             <div class="bg-white/5 p-6 rounded-3xl border border-white/10">
-                <label class="block text-[10px] text-gray-500 font-bold uppercase mb-4">Google Sheets CSV 連結</label>
-                <textarea id="cfg-csv-url" rows="6" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono outline-none border border-white/10 focus:border-emerald-500/50" placeholder="貼上發佈到網路的 CSV 連結..."></textarea>
+                <label class="block text-[10px] text-gray-500 font-bold uppercase mb-2">Google Sheets CSV 連結</label>
+                <textarea id="cfg-csv-url" rows="5" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono outline-none border border-white/10"></textarea>
+                <p class="text-[10px] text-gray-500 mt-2">請確保網址結尾是 output=csv</p>
             </div>
-            <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/30 hover:bg-emerald-400 transition-all active:scale-95">啟動上帝視角同步</button>
+            <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl shadow-xl">同步上帝視角</button>
         </div>
     </div>
 
-    <button onclick="toggleSettings()" class="fixed bottom-10 right-10 w-20 h-20 rounded-full bg-emerald-500 text-white shadow-[0_0_50px_rgba(16,185,129,0.4)] z-[999] flex items-center justify-center text-3xl gear-pulse hover:scale-110 transition-transform">⚙️</button>
-
     <script>
         let CONFIG = { csvUrl: localStorage.getItem('than_m7_csv') || '' };
+
         function toggleSettings() { 
-            const drawer = document.getElementById('settings-drawer');
-            drawer.classList.toggle('translate-x-full'); 
+            document.getElementById('settings-drawer').classList.toggle('translate-x-full');
+            document.getElementById('cfg-csv-url').value = CONFIG.csvUrl;
         }
         
         async function saveAndSync() {
-            CONFIG.csvUrl = document.getElementById('cfg-csv-url').value;
+            CONFIG.csvUrl = document.getElementById('cfg-csv-url').value.trim();
             localStorage.setItem('than_m7_csv', CONFIG.csvUrl);
             toggleSettings();
             await fetchData();
@@ -79,36 +73,62 @@
         async function fetchData() {
             if (!CONFIG.csvUrl) return;
             try {
-                const response = await fetch(CONFIG.csvUrl);
-                const data = await response.text();
-                parseCSV(data);
-                document.getElementById('sync-indicator').innerText = `✅ 數據同步完成: ${new Date().toLocaleTimeString()}`;
+                // 加一個隨機參數防止瀏覽器緩存舊資料
+                const finalUrl = CONFIG.csvUrl + (CONFIG.csvUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+                const response = await fetch(finalUrl);
+                const csvData = await response.text();
+                processData(csvData);
             } catch (e) {
-                document.getElementById('sync-indicator').innerText = `❌ 同步失敗，請檢查連結`;
+                document.getElementById('ui-last-update').innerText = "❌ 連線失敗";
+                console.error(e);
             }
         }
 
-        function parseCSV(csv) {
-            const rows = csv.split('\n').map(row => {
-                const matches = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-                return matches ? matches.map(m => m.replace(/"/g, '')) : row.split(',');
+        function processData(csv) {
+            // 強化版 CSV 解析：處理換行與逗號
+            const rows = csv.split(/\r?\n/).map(row => {
+                return row.split(',').map(cell => cell.replace(/^"(.*)"$/, '$1').trim());
             });
-            let totalAssetValue = 0, assets = [];
-            rows.slice(1, 6).forEach(row => {
-                if (row[0]) {
-                    const val = parseFloat(row[5]) || 0;
+
+            let assets = [];
+            let totalAssetValue = 0;
+            let totalDebt = 0;
+
+            // 1. 抓取標的 (第一行是標題，標的在 A2~A6)
+            for (let i = 1; i <= 5; i++) {
+                let row = rows[i];
+                if (row && row[0]) {
+                    let val = parseFloat(row[5]) || 0; // F欄: 台幣市值
                     totalAssetValue += val;
-                    assets.push({ code: row[0], target: row[6], suggest: row[8], val: val });
+                    assets.push({
+                        code: row[0],
+                        target: row[6], // G欄: 目標%
+                        suggest: row[8] // I欄: 建議操作
+                    });
                 }
-            });
-            const totalDebt = parseFloat(rows[1][11].replace(/,/g, '')) || 0;
-            const ratio = totalDebt > 0 ? Math.round((totalAssetValue / totalDebt) * 100) : 9999;
+            }
+
+            // 2. 智慧偵測：掃描整張表找「質押總借款」
+            for (let r = 0; r < rows.length; r++) {
+                for (let c = 0; c < rows[r].length; c++) {
+                    if (rows[r][c] === "質押總借款") {
+                        totalDebt = parseFloat(rows[r][c+1]) || 0;
+                        break;
+                    }
+                }
+            }
+
+            // 3. 更新 UI
+            const ratio = totalDebt > 0 ? Math.round((totalAssetValue / totalDebt) * 100) : 0;
             document.getElementById('ui-ratio').innerText = ratio + '%';
+            document.getElementById('ui-total-assets').innerText = `總市值: NT$ ${Math.round(totalAssetValue).toLocaleString()}`;
+            document.getElementById('ui-last-update').innerText = `✅ 同步成功: ${new Date().toLocaleTimeString()}`;
+
             document.getElementById('ui-asset-table').innerHTML = assets.map(a => `
                 <tr class="border-b border-white/5">
-                    <td class="py-5 text-lg">${a.code}</td>
-                    <td class="text-right text-lg">${a.target}%</td>
-                    <td class="text-right text-lg ${parseFloat(a.suggest) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${a.suggest}</td>
+                    <td class="py-5">${a.code}</td>
+                    <td class="text-right">${a.target}%</td>
+                    <td class="text-right ${parseFloat(a.suggest) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${a.suggest}</td>
                 </tr>
             `).join('');
         }
