@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M7 戰略終端 v8.0 | Than陸仁</title>
+    <title>M7 戰略終端 v8.1 | Than陸仁</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --m7-emerald: #10B981; --m7-rose: #F43F5E; --m7-bg: #0F172A; }
@@ -19,11 +19,11 @@
         <header class="flex justify-between items-center border-b border-white/10 pb-6">
             <div>
                 <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter">M7 COMMAND CENTER</h1>
-                <p id="ui-sync-time" class="text-[10px] text-gray-600 font-bold uppercase mt-1">Ready for Cloud Sync</p>
+                <p id="ui-sync-status" class="text-[10px] text-gray-600 font-bold uppercase mt-1">Ready for Cloud Sync</p>
             </div>
             <div class="flex gap-2">
-                <button onclick="document.body.classList.toggle('privacy-on')" class="w-10 h-10 m7-card flex items-center justify-center">👁️</button>
-                <button onclick="toggleSettings()" class="w-10 h-10 m7-card border-emerald-500/50 border flex items-center justify-center">⚙️</button>
+                <button onclick="document.body.classList.toggle('privacy-on')" class="w-10 h-10 m7-card flex items-center justify-center text-xs">👁️</button>
+                <button onclick="toggleSettings()" class="w-10 h-10 m7-card border-emerald-500/50 border flex items-center justify-center text-xs">⚙️</button>
             </div>
         </header>
 
@@ -52,19 +52,17 @@
                             <th class="pb-4 text-right">現價</th>
                             <th class="pb-4 text-right">實際%</th>
                             <th class="pb-4 text-right">目標%</th>
-                            <th class="pb-4 text-right">建議操作 (股)</th>
+                            <th class="pb-4 text-right">建議操作</th>
                         </tr>
                     </thead>
-                    <tbody id="ui-asset-table" class="divide-y divide-white/5">
-                        </tbody>
+                    <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
                 </table>
             </div>
         </div>
 
         <div class="m7-card p-8">
-            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-rose-400">📉 雲端同步：壓力測試模擬</h3>
-            <div id="ui-stress-grid" class="grid grid-cols-3 gap-4">
-                </div>
+            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-rose-400">📉 壓力測試模擬</h3>
+            <div id="ui-stress-grid" class="grid grid-cols-3 gap-4"></div>
         </div>
     </div>
 
@@ -74,7 +72,8 @@
             <button onclick="toggleSettings()" class="text-3xl">✕</button>
         </div>
         <textarea id="cfg-csv-url" rows="6" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono mb-6" placeholder="貼上 CSV 連結..."></textarea>
-        <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl">啟動雲端同步</button>
+        <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl">啟動上帝視角同步</button>
+        <p id="debug-info" class="text-[9px] text-gray-600 mt-4 break-all"></p>
     </div>
 
     <script>
@@ -90,39 +89,54 @@
 
         async function fetchData() {
             if (!CONFIG.csvUrl) return;
+            const status = document.getElementById('ui-sync-status');
+            const debug = document.getElementById('debug-info');
+            status.innerText = "Syncing...";
+
             try {
-                const response = await fetch(CONFIG.csvUrl + '?t=' + new Date().getTime());
+                // 修正 URL 串接邏輯
+                const separator = CONFIG.csvUrl.includes('?') ? '&' : '?';
+                const finalUrl = `${CONFIG.csvUrl}${separator}t=${new Date().getTime()}`;
+                
+                const response = await fetch(finalUrl);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const csvData = await response.text();
                 processData(csvData);
-                document.getElementById('ui-sync-time').innerText = `Updated: ${new Date().toLocaleTimeString()}`;
-            } catch (e) { alert("同步失敗，請檢查連結"); }
+                status.innerText = `Updated: ${new Date().toLocaleTimeString()}`;
+            } catch (e) { 
+                status.innerText = "❌ Sync Failed";
+                debug.innerText = `Error: ${e.message}`;
+            }
+        }
+
+        function parseCSVLine(line) {
+            // 使用正則表達式解析 CSV，處理引號內的逗號 (例如 "1,234")
+            const pattern = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+            const matches = line.match(pattern) || [];
+            return matches.map(m => m.replace(/^"|"$/g, '').replace(/,/g, '').trim());
         }
 
         function processData(csv) {
-            const rows = csv.split(/\r?\n/).map(row => row.split(',').map(c => c.replace(/"/g, '').trim()));
+            const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "").map(parseCSVLine);
             
-            // 🎯 1. 抓取標的明細 (A2:I6)
             let assets = [];
+            // 讀取 A2:I6 數據
             for (let i = 1; i <= 5; i++) {
                 if (rows[i] && rows[i][0]) {
                     assets.push({
                         code: rows[i][0], price: rows[i][3],
                         actual: rows[i][7], target: rows[i][6],
-                        suggest: rows[i][8]
+                        suggest: rows[i][8], value: parseFloat(rows[i][5]) || 0
                     });
                 }
             }
 
-            // 🎯 2. 抓取 M7 核心數據 (欄位 L2, L3, L4 等)
-            // 質押總借款: Row 1, Col 11
-            const debt = rows[1][11] || "--";
-            // 目前維持率: Row 3, Col 11
-            const ratio = rows[3][11] || "--";
-            // 台幣總市值: 解析所有台幣市值總和或抓 L2 下方
-            let totalValue = 0;
-            assets.forEach(a => totalValue += (parseFloat(rows[assets.indexOf(a)+1][5]) || 0));
+            // 抓取 Column L (索引 11) 的核心指標
+            const debt = rows[1] ? rows[1][11] : "0";
+            const ratio = rows[3] ? rows[3][11] : "--";
+            const totalVal = assets.reduce((sum, a) => sum + a.value, 0);
 
-            // 🎯 3. 抓取壓力測試 (Row 6, 7, 8, Col 11)
+            // 壓力測試 (Row 6, 7, 8, Col L)
             const stress = [
                 { label: "-10%", val: rows[6] ? rows[6][11] : "--" },
                 { label: "-20%", val: rows[7] ? rows[7][11] : "--" },
@@ -130,14 +144,14 @@
             ];
 
             // 更新 UI
-            document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalValue).toLocaleString()}`;
+            document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalVal).toLocaleString()}`;
             document.getElementById('ui-total-debt').innerText = `NT$ ${parseFloat(debt).toLocaleString()}`;
-            document.getElementById('ui-ratio').innerText = ratio;
+            document.getElementById('ui-ratio').innerText = ratio.includes('%') ? ratio : ratio + '%';
             document.getElementById('ui-ratio').style.color = parseFloat(ratio) < 180 ? 'var(--m7-rose)' : 'var(--m7-emerald)';
 
             document.getElementById('ui-asset-table').innerHTML = assets.map(a => `
-                <tr class="border-b border-white/5">
-                    <td class="py-5 font-bold">${a.code}</td>
+                <tr class="border-b border-white/5 text-xs md:text-sm">
+                    <td class="py-4 font-bold">${a.code}</td>
                     <td class="text-right">${a.price}</td>
                     <td class="text-right text-gray-400">${a.actual}</td>
                     <td class="text-right text-emerald-400/50">${a.target}</td>
@@ -148,7 +162,7 @@
             document.getElementById('ui-stress-grid').innerHTML = stress.map(s => `
                 <div class="bg-white/5 p-4 rounded-2xl text-center border border-white/5">
                     <p class="text-[9px] text-gray-500 font-bold mb-1">${s.label}</p>
-                    <p class="text-xl font-black text-rose-400">${s.val}</p>
+                    <p class="text-lg font-black text-rose-400">${s.val.includes('%') ? s.val : s.val + '%'}</p>
                 </div>
             `).join('');
         }
