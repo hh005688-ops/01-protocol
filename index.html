@@ -2,66 +2,84 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M7 戰略終端 | Than陸仁 監製</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M7 戰略終端 v8.0 | Than陸仁</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --m7-green: #10B981; --m7-dark: #0F172A; --m7-red: #F43F5E; }
-        body { background-color: var(--m7-dark); color: #F1F5F9; font-family: sans-serif; }
-        .m7-glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; }
-        #settings-drawer { z-index: 9999; transition: transform 0.4s ease; }
-        .translate-x-full { transform: translateX(100%); }
+        :root { --m7-emerald: #10B981; --m7-rose: #F43F5E; --m7-bg: #0F172A; }
+        body { background-color: var(--m7-bg); color: #E2E8F0; font-family: sans-serif; }
+        .m7-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; backdrop-filter: blur(10px); }
+        .privacy-mask { transition: filter 0.3s; }
+        body.privacy-on .privacy-mask { filter: blur(12px); }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-32">
 
     <div class="max-w-6xl mx-auto space-y-6">
-        <header class="flex justify-between items-center pb-6 border-b border-white/10">
+        <header class="flex justify-between items-center border-b border-white/10 pb-6">
             <div>
-                <h1 class="text-3xl font-black italic text-emerald-400">M7 STRATEGIC</h1>
-                <p id="ui-last-update" class="text-[9px] font-bold text-gray-600 tracking-[0.2em]">WAITING FOR CLOUD...</p>
+                <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter">M7 COMMAND CENTER</h1>
+                <p id="ui-sync-time" class="text-[10px] text-gray-600 font-bold uppercase mt-1">Ready for Cloud Sync</p>
             </div>
-            <button onclick="toggleSettings()" class="w-12 h-12 m7-glass border-emerald-500/50 border flex items-center justify-center text-2xl">⚙️</button>
+            <div class="flex gap-2">
+                <button onclick="document.body.classList.toggle('privacy-on')" class="w-10 h-10 m7-card flex items-center justify-center">👁️</button>
+                <button onclick="toggleSettings()" class="w-10 h-10 m7-card border-emerald-500/50 border flex items-center justify-center">⚙️</button>
+            </div>
         </header>
 
-        <div class="m7-glass p-12 text-center">
-            <p class="text-xs font-bold text-gray-500 uppercase mb-4">全域質押維持率</p>
-            <div id="ui-ratio" class="text-8xl font-black text-emerald-400">--%</div>
-            <div id="ui-total-assets" class="mt-4 text-sm font-bold text-gray-400">市值: --</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="m7-card p-6 border-l-4 border-emerald-500">
+                <p class="text-[10px] text-gray-500 font-bold uppercase">總擔保品市值</p>
+                <p id="ui-total-assets" class="text-2xl font-black privacy-mask text-emerald-400">NT$ --</p>
+            </div>
+            <div class="m7-card p-6 border-l-4 border-rose-500">
+                <p class="text-[10px] text-gray-500 font-bold uppercase">質押總負債</p>
+                <p id="ui-total-debt" class="text-2xl font-black privacy-mask text-rose-400">NT$ --</p>
+            </div>
+            <div class="m7-card p-6 bg-gradient-to-br from-slate-800 to-slate-900">
+                <p class="text-[10px] text-gray-500 font-bold uppercase">當前維持率</p>
+                <p id="ui-ratio" class="text-4xl font-black italic">--%</p>
+            </div>
         </div>
 
-        <div class="m7-glass p-6 overflow-hidden">
-            <table class="w-full text-left text-sm font-bold">
-                <thead class="text-[10px] text-gray-600 border-b border-white/5 uppercase">
-                    <tr><th class="pb-4">標的</th><th class="pb-4 text-right">目標 %</th><th class="pb-4 text-right">戰略操作</th></tr>
-                </thead>
-                <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
-            </table>
+        <div class="m7-card p-8">
+            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic">M7 資產再平衡指引</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm font-bold">
+                    <thead class="text-gray-600 text-[10px] uppercase border-b border-white/5">
+                        <tr>
+                            <th class="pb-4">代號</th>
+                            <th class="pb-4 text-right">現價</th>
+                            <th class="pb-4 text-right">實際%</th>
+                            <th class="pb-4 text-right">目標%</th>
+                            <th class="pb-4 text-right">建議操作 (股)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ui-asset-table" class="divide-y divide-white/5">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="m7-card p-8">
+            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-rose-400">📉 雲端同步：壓力測試模擬</h3>
+            <div id="ui-stress-grid" class="grid grid-cols-3 gap-4">
+                </div>
         </div>
     </div>
 
-    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-10 shadow-2xl border-l border-white/10 translate-x-full">
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-10 shadow-2xl border-l border-white/10 transition-transform translate-x-full z-[1000]">
         <div class="flex justify-between items-center mb-10 text-white">
-            <h3 class="text-2xl font-black italic">戰略配置中心</h3>
+            <h3 class="text-2xl font-black italic">CONFIG</h3>
             <button onclick="toggleSettings()" class="text-3xl">✕</button>
         </div>
-        <div class="space-y-6">
-            <div class="bg-white/5 p-6 rounded-3xl border border-white/10">
-                <label class="block text-[10px] text-gray-500 font-bold uppercase mb-2">Google Sheets CSV 連結</label>
-                <textarea id="cfg-csv-url" rows="5" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono outline-none border border-white/10"></textarea>
-                <p class="text-[10px] text-gray-500 mt-2">請確保網址結尾是 output=csv</p>
-            </div>
-            <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl shadow-xl">同步上帝視角</button>
-        </div>
+        <textarea id="cfg-csv-url" rows="6" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono mb-6" placeholder="貼上 CSV 連結..."></textarea>
+        <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl">啟動雲端同步</button>
     </div>
 
     <script>
         let CONFIG = { csvUrl: localStorage.getItem('than_m7_csv') || '' };
-
-        function toggleSettings() { 
-            document.getElementById('settings-drawer').classList.toggle('translate-x-full');
-            document.getElementById('cfg-csv-url').value = CONFIG.csvUrl;
-        }
+        function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('translate-x-full'); }
         
         async function saveAndSync() {
             CONFIG.csvUrl = document.getElementById('cfg-csv-url').value.trim();
@@ -73,63 +91,65 @@
         async function fetchData() {
             if (!CONFIG.csvUrl) return;
             try {
-                // 加一個隨機參數防止瀏覽器緩存舊資料
-                const finalUrl = CONFIG.csvUrl + (CONFIG.csvUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
-                const response = await fetch(finalUrl);
+                const response = await fetch(CONFIG.csvUrl + '?t=' + new Date().getTime());
                 const csvData = await response.text();
                 processData(csvData);
-            } catch (e) {
-                document.getElementById('ui-last-update').innerText = "❌ 連線失敗";
-                console.error(e);
-            }
+                document.getElementById('ui-sync-time').innerText = `Updated: ${new Date().toLocaleTimeString()}`;
+            } catch (e) { alert("同步失敗，請檢查連結"); }
         }
 
         function processData(csv) {
-            // 強化版 CSV 解析：處理換行與逗號
-            const rows = csv.split(/\r?\n/).map(row => {
-                return row.split(',').map(cell => cell.replace(/^"(.*)"$/, '$1').trim());
-            });
-
+            const rows = csv.split(/\r?\n/).map(row => row.split(',').map(c => c.replace(/"/g, '').trim()));
+            
+            // 🎯 1. 抓取標的明細 (A2:I6)
             let assets = [];
-            let totalAssetValue = 0;
-            let totalDebt = 0;
-
-            // 1. 抓取標的 (第一行是標題，標的在 A2~A6)
             for (let i = 1; i <= 5; i++) {
-                let row = rows[i];
-                if (row && row[0]) {
-                    let val = parseFloat(row[5]) || 0; // F欄: 台幣市值
-                    totalAssetValue += val;
+                if (rows[i] && rows[i][0]) {
                     assets.push({
-                        code: row[0],
-                        target: row[6], // G欄: 目標%
-                        suggest: row[8] // I欄: 建議操作
+                        code: rows[i][0], price: rows[i][3],
+                        actual: rows[i][7], target: rows[i][6],
+                        suggest: rows[i][8]
                     });
                 }
             }
 
-            // 2. 智慧偵測：掃描整張表找「質押總借款」
-            for (let r = 0; r < rows.length; r++) {
-                for (let c = 0; c < rows[r].length; c++) {
-                    if (rows[r][c] === "質押總借款") {
-                        totalDebt = parseFloat(rows[r][c+1]) || 0;
-                        break;
-                    }
-                }
-            }
+            // 🎯 2. 抓取 M7 核心數據 (欄位 L2, L3, L4 等)
+            // 質押總借款: Row 1, Col 11
+            const debt = rows[1][11] || "--";
+            // 目前維持率: Row 3, Col 11
+            const ratio = rows[3][11] || "--";
+            // 台幣總市值: 解析所有台幣市值總和或抓 L2 下方
+            let totalValue = 0;
+            assets.forEach(a => totalValue += (parseFloat(rows[assets.indexOf(a)+1][5]) || 0));
 
-            // 3. 更新 UI
-            const ratio = totalDebt > 0 ? Math.round((totalAssetValue / totalDebt) * 100) : 0;
-            document.getElementById('ui-ratio').innerText = ratio + '%';
-            document.getElementById('ui-total-assets').innerText = `總市值: NT$ ${Math.round(totalAssetValue).toLocaleString()}`;
-            document.getElementById('ui-last-update').innerText = `✅ 同步成功: ${new Date().toLocaleTimeString()}`;
+            // 🎯 3. 抓取壓力測試 (Row 6, 7, 8, Col 11)
+            const stress = [
+                { label: "-10%", val: rows[6] ? rows[6][11] : "--" },
+                { label: "-20%", val: rows[7] ? rows[7][11] : "--" },
+                { label: "-30%", val: rows[8] ? rows[8][11] : "--" }
+            ];
+
+            // 更新 UI
+            document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalValue).toLocaleString()}`;
+            document.getElementById('ui-total-debt').innerText = `NT$ ${parseFloat(debt).toLocaleString()}`;
+            document.getElementById('ui-ratio').innerText = ratio;
+            document.getElementById('ui-ratio').style.color = parseFloat(ratio) < 180 ? 'var(--m7-rose)' : 'var(--m7-emerald)';
 
             document.getElementById('ui-asset-table').innerHTML = assets.map(a => `
                 <tr class="border-b border-white/5">
-                    <td class="py-5">${a.code}</td>
-                    <td class="text-right">${a.target}%</td>
-                    <td class="text-right ${parseFloat(a.suggest) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${a.suggest}</td>
+                    <td class="py-5 font-bold">${a.code}</td>
+                    <td class="text-right">${a.price}</td>
+                    <td class="text-right text-gray-400">${a.actual}</td>
+                    <td class="text-right text-emerald-400/50">${a.target}</td>
+                    <td class="text-right font-black ${parseFloat(a.suggest) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${a.suggest}</td>
                 </tr>
+            `).join('');
+
+            document.getElementById('ui-stress-grid').innerHTML = stress.map(s => `
+                <div class="bg-white/5 p-4 rounded-2xl text-center border border-white/5">
+                    <p class="text-[9px] text-gray-500 font-bold mb-1">${s.label}</p>
+                    <p class="text-xl font-black text-rose-400">${s.val}</p>
+                </div>
             `).join('');
         }
 
