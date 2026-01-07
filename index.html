@@ -27,7 +27,11 @@
         <header class="flex justify-between items-end gap-4">
             <div>
                 <h1 class="text-3xl font-black">質押安全壓力表</h1>
-                <p class="text-sm text-emerald-500 font-bold mt-1">Than 陸仁 | 戰略共享版</p>
+
+<p class="text-sm text-emerald-500 font-bold mt-1">
+    <a href="https://www.youtube.com/@ericZang1985
+" target="_blank" class="hover:underline">Than 陸仁 | 戰略共享版 ↗</a>
+</p>
             </div>
             <div class="flex gap-4 items-center bg-white p-2 rounded-full shadow-sm">
                 <button onclick="togglePrivacy()" class="text-xs text-gray-500 px-4 py-2 bg-gray-50 rounded-full font-bold">👁️ 隱私模式</button>
@@ -128,4 +132,24 @@
             const list = document.getElementById('asset-container');
             list.innerHTML = '';
             STATE.assets.forEach(a => {
-                list.innerHTML += `<div class="flex justify-between items-center bg-gray-50 rounded-xl p-4 border border-gray-100"><span class="text-xs text-gray-400 font-bold">${a.name}</span><span class="text-lg font-black
+                list.innerHTML += `<div class="flex justify-between items-center bg-gray-50 rounded-xl p-4 border border-gray-100"><span class="text-xs text-gray-400 font-bold">${a.name}</span><span class="text-lg font-black privacy-mask">${a.val.toLocaleString()}</span></div>`;
+            });
+        }
+        // 分享功能：複製連結到剪貼簿
+        function shareTool() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                const btnText = document.getElementById('share-text');
+                const originalText = btnText.innerText;
+                btnText.innerText = "✅ 網址已複製！去分享吧";
+                setTimeout(() => { btnText.innerText = originalText; }, 3000);
+            });
+        }
+        window.onload = () => {
+            document.getElementById('cfg-debt').value = STATE.debt;
+            STATE.assets.forEach(a => addAssetRow(a.name, a.val));
+            run();
+        };
+    </script>
+</body>
+</html>
