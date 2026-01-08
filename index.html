@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M7 戰略終端 v10.72 | Than陸仁 監製</title>
+    <title>M7 COMMAND CENTER v10.73 | Than陸仁</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="apple-touch-icon" href="logo.png">
-    <link rel="manifest" href="manifest.json">
     <style>
         :root { --m7-green: #10B981; --m7-red: #F43F5E; --m7-dark: #0F172A; }
         body { background-color: var(--m7-dark); color: #F1F5F9; font-family: system-ui, -apple-system, sans-serif; overflow-x: hidden; }
@@ -17,8 +16,8 @@
         body.privacy-on .privacy-mask { filter: blur(15px); }
         #settings-drawer { z-index: 5000; transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
         .slope-glow { text-shadow: 0 0 20px rgba(16,185,129,0.4); }
-        /* 防止圖表容器變形 */
-        .chart-container { position: relative; height: 200px; width: 100%; display: flex; justify-content: center; align-items: center; }
+        /* 鎖死圓餅圖比例 */
+        .chart-box { position: relative; width: 180px; height: 180px; margin: 0 auto; flex-shrink: 0; }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-32">
@@ -28,25 +27,30 @@
             <div class="flex items-center gap-4">
                 <img src="logo.png" alt="M7" class="w-12 h-12 rounded-xl bg-white/5 p-1">
                 <div>
-                    <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter uppercase leading-none">M7 指揮部</h1>
-                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2">v10.72 繁體中文版</p>
+                    <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter uppercase leading-none">M7 COMMAND CENTER</h1>
+                    <div class="flex items-center gap-2 mt-2">
+                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">v10.73 STABLE</p>
+                        <a href="https://www.youtube.com/@ericZang1985" target="_blank" class="text-[10px] font-bold text-rose-500 hover:text-rose-400 flex items-center gap-1">
+                            <span>▶</span> @ericZang1985
+                        </a>
+                    </div>
                 </div>
             </div>
             <div class="flex items-center gap-3 w-full md:w-auto">
                 <div class="relative flex-1 md:flex-none">
-                    <select id="ui-acc-switcher" onchange="switchAccount(this.value)" class="w-full bg-emerald-500/10 border border-emerald-500/30 p-3 pr-8 rounded-2xl text-sm font-bold text-emerald-400 outline-none cursor-pointer appearance-none"></select>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-400">▼</div>
+                    <select id="ui-acc-switcher" onchange="switchAccount(this.value)" class="w-full bg-emerald-500/10 border border-emerald-500/30 p-3 pr-8 rounded-2xl text-sm font-bold text-emerald-400 outline-none appearance-none cursor-pointer"></select>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-400 text-xs">▼</div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="document.body.classList.toggle('privacy-on')" class="w-11 h-11 m7-card flex items-center justify-center" title="隱私模式">👁️</button>
-                    <button onclick="toggleSettings()" class="w-11 h-11 m7-card border-emerald-500/50 border flex items-center justify-center" title="設定">⚙️</button>
+                    <button onclick="document.body.classList.toggle('privacy-on')" class="w-11 h-11 m7-card flex items-center justify-center">👁️</button>
+                    <button onclick="toggleSettings()" class="w-11 h-11 m7-card border-emerald-500/50 border flex items-center justify-center">⚙️</button>
                 </div>
             </div>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="m7-card p-10 md:col-span-2 text-center flex flex-col justify-center">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 italic">當前維持率</p>
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 italic">Maintenance Ratio</p>
                 <div id="ui-ratio" class="text-6xl md:text-9xl font-black tracking-tighter text-emerald-400 privacy-mask">0%</div>
                 <div class="w-full mt-10 h-2 bg-white/5 rounded-full overflow-hidden">
                     <div id="ui-survival-bar" class="h-full bg-gradient-to-r from-rose-500 to-emerald-500 transition-all duration-1000"></div>
@@ -57,7 +61,7 @@
                 <div id="ui-slope" class="text-5xl font-black text-emerald-400 slope-glow privacy-mask">+0</div>
                 <div id="ui-slope-total" class="mt-2 text-xs font-bold text-gray-600 privacy-mask">累積淨收益: NT$ 0</div>
                 <div class="mt-6 w-full pt-6 border-t border-white/5 text-center">
-                    <p id="ui-slope-desc" class="text-[10px] text-gray-400 leading-relaxed font-bold uppercase">正在計算宇宙動能...</p>
+                    <p id="ui-slope-desc" class="text-[10px] text-gray-400 font-bold uppercase leading-relaxed"></p>
                 </div>
             </div>
         </div>
@@ -66,15 +70,19 @@
             <div class="m7-card p-8">
                 <div class="flex justify-between items-end mb-6">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest italic flex items-center gap-2">
-                        <span class="w-1 h-4 bg-emerald-500 rounded-full"></span> 資產分佈
+                        <span class="w-1 h-4 bg-emerald-500 rounded-full"></span> 資產分佈 (含百分比)
                     </h3>
                     <div id="ui-total-assets" class="text-xl font-black text-emerald-400 privacy-mask">NT$ 0</div>
                 </div>
-                <div class="flex flex-col md:flex-row gap-6 items-center">
-                    <div class="chart-container">
+                <div class="flex flex-col md:flex-row gap-8 items-center">
+                    <div class="chart-box">
                         <canvas id="weightChart"></canvas>
                     </div>
-                    <div class="flex-1 w-full"><table class="w-full text-left text-sm font-bold"><tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody></table></div>
+                    <div class="flex-1 w-full overflow-hidden">
+                        <table class="w-full text-left text-sm font-bold border-separate border-spacing-y-2">
+                            <tbody id="ui-asset-table"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="m7-card p-8">
@@ -87,74 +95,70 @@
     </div>
 
     <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-slate-900 p-8 shadow-2xl border-l border-white/10 translate-x-full overflow-y-auto">
-        <div class="flex justify-between items-center mb-10 border-b border-white/5 pb-4">
-            <h3 class="text-2xl font-black italic tracking-tighter text-white uppercase">戰略配置中心</h3>
-            <button onclick="toggleSettings()" class="text-white text-3xl px-4">✕</button>
+        <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+            <h3 class="text-xl font-black italic tracking-tighter text-white uppercase">Strategic Setup</h3>
+            <button onclick="toggleSettings()" class="text-white text-2xl p-2">✕</button>
         </div>
         <div class="space-y-6">
-            <div class="bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10 space-y-4">
-                <label class="text-[10px] text-emerald-500 font-bold block uppercase tracking-widest">宇宙起始點 (用於斜率計算)</label>
+            <div class="bg-emerald-500/5 p-5 rounded-3xl border border-emerald-500/10 space-y-4">
+                <label class="text-[10px] text-emerald-500 font-bold block uppercase tracking-widest">宇宙起始點</label>
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-[10px] text-gray-500 block mb-1">初始本金</label>
-                        <input type="number" id="cfg-init-cap" class="bg-slate-800 w-full p-3 rounded-xl text-sm font-bold outline-none border border-white/5" placeholder="例如: 300000">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 block mb-1">起始日期</label>
-                        <input type="date" id="cfg-init-date" class="bg-slate-800 w-full p-3 rounded-xl text-sm font-bold outline-none border border-white/5">
-                    </div>
+                    <div><label class="text-[10px] text-gray-500 block mb-1">初始本金</label><input type="number" id="cfg-init-cap" class="bg-slate-800 w-full p-3 rounded-xl text-sm font-bold text-white outline-none"></div>
+                    <div><label class="text-[10px] text-gray-500 block mb-1">起始日期</label><input type="date" id="cfg-init-date" class="bg-slate-800 w-full p-3 rounded-xl text-sm font-bold text-white outline-none"></div>
                 </div>
             </div>
-
-            <div class="bg-white/5 p-6 rounded-3xl space-y-5 border border-white/5">
-                <div><label class="text-[10px] text-gray-500 font-bold block mb-2 uppercase tracking-widest">帳號名稱</label><input id="cfg-acc-name" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold outline-none border border-white/5" placeholder="例如：我的質押核心戶"></div>
-                <div><label class="text-[10px] text-gray-500 font-bold block mb-2 uppercase tracking-widest">質借總額 (Pledge Debt)</label><input type="number" id="cfg-debt" class="bg-slate-800 w-full p-4 rounded-xl text-xl font-black text-rose-400 outline-none border border-white/5" placeholder="0"></div>
+            <div class="bg-white/5 p-5 rounded-3xl space-y-5">
+                <div><label class="text-[10px] text-gray-500 font-bold block mb-2">帳號名稱</label><input id="cfg-acc-name" class="bg-slate-800 w-full p-3 rounded-xl text-sm font-bold text-white outline-none"></div>
+                <div><label class="text-[10px] text-gray-500 font-bold block mb-2 uppercase">質借金額 (Debt)</label><input type="number" id="cfg-debt" class="bg-slate-800 w-full p-3 rounded-xl text-xl font-black text-rose-400 outline-none"></div>
             </div>
-            
             <div class="space-y-4">
-                <div class="flex justify-between items-center px-1"><label class="text-xs text-gray-400 font-bold uppercase italic tracking-widest">資產配置明細</label><button onclick="addAssetRow()" class="text-[10px] px-5 py-2 bg-emerald-500 text-white rounded-full font-black uppercase">+ 新增資產</button></div>
-                <div id="cfg-asset-rows" class="space-y-3"></div>
+                <div class="flex justify-between items-center"><label class="text-xs text-gray-400 font-bold uppercase italic tracking-widest">資產配置明細</label><button onclick="addAssetRow()" class="text-[10px] px-4 py-2 bg-emerald-500 text-white rounded-full font-black uppercase">+ 新增資產</button></div>
+                <div id="cfg-asset-rows" class="space-y-2"></div>
             </div>
-
             <div class="flex gap-2">
-                <button onclick="exportConfig()" class="flex-1 py-3 bg-white/5 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-[10px] uppercase">匯出代碼</button>
-                <button onclick="importConfig()" class="flex-1 py-3 bg-white/5 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-[10px] uppercase">匯入代碼</button>
+                <button onclick="exportConfig()" class="flex-1 py-3 bg-white/5 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold text-[10px]">匯出代碼</button>
+                <button onclick="importConfig()" class="flex-1 py-3 bg-white/5 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold text-[10px]">匯入代碼</button>
             </div>
-            
-            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-500 text-white font-black rounded-3xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all mt-4 text-sm uppercase tracking-widest">儲存並啟動戰略</button>
-            <button onclick="deleteAccount()" class="w-full py-3 bg-rose-500/10 text-rose-400 rounded-xl font-bold text-[10px] uppercase tracking-widest">刪除當前帳號</button>
-            <button onclick="addAccount()" class="w-full py-3 bg-white/5 text-gray-400 rounded-xl font-bold text-[10px] uppercase tracking-widest border border-white/5">+ 建立新戰略帳號</button>
+            <button onclick="saveAndRun()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-3xl shadow-lg active:scale-95 transition-all text-sm uppercase">儲存並啟動戰略</button>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="addAccount()" class="py-3 bg-white/5 text-gray-400 rounded-xl font-bold text-[10px] border border-white/5">+ 建立新帳號</button>
+                <button onclick="deleteAccount()" class="py-3 bg-rose-500/10 text-rose-400 rounded-xl font-bold text-[10px]">刪除當前帳號</button>
+            </div>
         </div>
     </div>
 
     <script>
-        let DATA = JSON.parse(localStorage.getItem('than_m7_v1072')) || {
+        let DATA = JSON.parse(localStorage.getItem('than_m7_v1073')) || {
             activeIndex: 0,
             accounts: [{ name: '我的質押帳號', debt: 0, initCap: 300000, initDate: '2024-07-01', assets: [] }]
         };
         let myChart;
 
-        function toggleSettings() { 
+        function toggleSettings() {
             const drawer = document.getElementById('settings-drawer');
-            drawer.classList.toggle('translate-x-full');
-            if (!drawer.classList.contains('translate-x-full')) loadSettings(); 
+            if (drawer.classList.contains('translate-x-full')) {
+                loadSettings();
+                drawer.classList.remove('translate-x-full');
+            } else {
+                drawer.classList.add('translate-x-full');
+            }
         }
 
         function loadSettings() {
-            const acc = DATA.accounts[DATA.activeIndex];
+            const acc = DATA.accounts[DATA.activeIndex] || DATA.accounts[0];
             document.getElementById('cfg-acc-name').value = acc.name || '';
             document.getElementById('cfg-debt').value = acc.debt || 0;
             document.getElementById('cfg-init-cap').value = acc.initCap || 300000;
             document.getElementById('cfg-init-date').value = acc.initDate || '2024-07-01';
             const container = document.getElementById('cfg-asset-rows');
             container.innerHTML = '';
-            if (acc.assets) acc.assets.forEach(a => addAssetRow(a.code, a.val, a.target));
+            (acc.assets || []).forEach(a => addAssetRow(a.code, a.val, a.target));
         }
 
         function addAssetRow(code='', val='', target='') {
             const div = document.createElement('div');
-            div.className = "bg-white/5 p-4 rounded-2xl flex flex-wrap gap-2 items-center border border-white/5";
-            div.innerHTML = `<input type="text" placeholder="代號" class="flex-1 bg-slate-800 p-3 rounded-xl text-xs cfg-a-code font-bold outline-none text-white" value="${code}"><input type="number" placeholder="市值" class="w-[35%] bg-slate-800 p-3 rounded-xl text-xs cfg-a-val font-bold outline-none text-white" value="${val}"><input type="number" placeholder="%" class="w-[20%] bg-slate-800 p-3 rounded-xl text-xs cfg-a-target font-bold outline-none text-white" value="${target}"><button onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2 text-xl">✕</button>`;
+            div.className = "bg-white/5 p-3 rounded-2xl flex gap-2 items-center border border-white/5";
+            div.innerHTML = `<input type="text" placeholder="代號" class="w-24 bg-slate-800 p-2 rounded-xl text-xs cfg-a-code font-bold text-white outline-none" value="${code}"><input type="number" placeholder="市值" class="flex-1 bg-slate-800 p-2 rounded-xl text-xs cfg-a-val font-bold text-white outline-none" value="${val}"><input type="number" placeholder="%" class="w-16 bg-slate-800 p-2 rounded-xl text-xs cfg-a-target font-bold text-white outline-none" value="${target}"><button onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2 text-lg">✕</button>`;
             document.getElementById('cfg-asset-rows').appendChild(div);
         }
 
@@ -167,14 +171,14 @@
             const codes = document.querySelectorAll('.cfg-a-code'), vals = document.querySelectorAll('.cfg-a-val'), targets = document.querySelectorAll('.cfg-a-target');
             acc.assets = [];
             codes.forEach((c, i) => { if (c.value) acc.assets.push({ code: c.value, val: parseFloat(vals[i].value) || 0, target: parseFloat(targets[i].value) || 0 }); });
-            localStorage.setItem('than_m7_v1072', JSON.stringify(DATA));
-            document.getElementById('settings-drawer').classList.add('translate-x-full');
+            localStorage.setItem('than_m7_v1073', JSON.stringify(DATA));
+            toggleSettings();
             run();
         }
 
         function run() {
             const acc = DATA.accounts[DATA.activeIndex] || DATA.accounts[0];
-            const totalAsset = acc.assets.reduce((sum, a) => sum + a.val, 0);
+            const totalAsset = acc.assets.reduce((sum, a) => sum + (a.val || 0), 0);
             const netWorth = totalAsset - acc.debt;
             const ratio = acc.debt > 0 ? Math.round((totalAsset / acc.debt) * 100) : 0;
             const survival = ratio > 0 ? Math.round((1 - (160 / ratio)) * 100) : 0;
@@ -190,19 +194,18 @@
                 const slope = Math.round(totalGain / days);
                 document.getElementById('ui-slope').innerText = (slope >= 0 ? '+' : '') + slope.toLocaleString();
                 document.getElementById('ui-slope-total').innerText = `累積淨收益: NT$ ${Math.round(totalGain).toLocaleString()}`;
-                const dailySalary = 40000 / 30;
-                const multiplier = (slope / dailySalary).toFixed(1);
+                const multiplier = (slope / 1333).toFixed(1);
                 document.getElementById('ui-slope-desc').innerText = `當前財富流速約為每日薪水的 ${multiplier} 倍`;
             }
 
             document.getElementById('ui-asset-table').innerHTML = acc.assets.map(a => {
                 const diff = (totalAsset * (a.target / 100)) - a.val;
-                return `<tr><td class="py-3 text-xs uppercase">${a.code}</td><td class="text-right text-[10px] text-gray-500">${a.target}%</td><td class="text-right text-xs ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Math.round(diff).toLocaleString()}</td></tr>`;
+                return `<tr><td class="text-xs uppercase text-white">${a.code}</td><td class="text-right text-[10px] text-gray-500 font-bold">${a.target}%</td><td class="text-right text-xs ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Math.round(diff).toLocaleString()}</td></tr>`;
             }).join('');
 
             document.getElementById('ui-stress-grid').innerHTML = [10, 20, 30, 40, 50, 60].map(d => {
                 const sRatio = acc.debt > 0 ? Math.round((totalAsset * (1 - d/100) / acc.debt) * 100) : 0;
-                return `<div class="bg-white/5 p-3 rounded-xl text-center border border-white/5"><p class="text-[8px] text-gray-500 mb-1">-${d}%</p><p class="text-sm font-black ${sRatio > 0 && sRatio < 160 ? 'text-rose-400' : 'text-emerald-400'}">${sRatio > 0 ? sRatio + '%' : '--%'}</p></div>`;
+                return `<div class="bg-white/5 p-4 rounded-2xl text-center border border-white/5"><p class="text-[8px] text-gray-500 mb-1 font-bold">-${d}%</p><p class="text-lg font-black ${sRatio > 0 && sRatio < 160 ? 'text-rose-400' : 'text-emerald-400'}">${sRatio > 0 ? sRatio + '%' : '--%'}</p></div>`;
             }).join('');
 
             updateChart(acc.assets, totalAsset);
@@ -212,36 +215,37 @@
         function updateChart(assets, total) {
             const ctx = document.getElementById('weightChart').getContext('2d');
             if (myChart) myChart.destroy();
-            if (assets.length === 0) return;
-            
-            // 將百分比直接加入標籤中
+            if (!assets || assets.length === 0) return;
             const labels = assets.map(a => `${a.code} (${((a.val / total) * 100).toFixed(1)}%)`);
-            
-            myChart = new Chart(ctx, { 
-                type: 'doughnut', 
-                data: { 
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
                     labels: labels,
-                    datasets: [{ 
-                        data: assets.map(a => a.val), 
-                        backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#F43F5E', '#8B5CF6'], 
-                        borderWidth: 0 
-                    }] 
-                }, 
-                options: { 
-                    maintainAspectRatio: false, // 禁止變形
-                    plugins: { 
-                        legend: { display: false } // 隱藏原生圖例，因為表格已有數據
-                    }, 
-                    cutout: '75%' 
-                } 
+                    datasets: [{
+                        data: assets.map(a => a.val),
+                        backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#F43F5E', '#8B5CF6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: '75%'
+                }
             });
         }
 
         function updateSwitcher() {
             const select = document.getElementById('ui-acc-switcher');
-            select.innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}" ${i === DATA.activeIndex ? 'selected' : ''}>${acc.name || '未命名帳號'}</option>`).join('');
+            select.innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}" ${i === DATA.activeIndex ? 'selected' : ''}>${acc.name || '未命名'}</option>`).join('');
         }
         function switchAccount(idx) { DATA.activeIndex = parseInt(idx); run(); }
         function addAccount() { DATA.accounts.push({ name: '新戰略帳號', debt: 0, initCap: 300000, initDate: '2024-07-01', assets: [] }); DATA.activeIndex = DATA.accounts.length - 1; loadSettings(); }
-        function exportConfig() { navigator.clipboard.writeText(JSON.stringify(DATA)).then(() => alert('戰略配置代碼已複製到剪貼簿！')); }
-        function importConfig
+        function exportConfig() { navigator.clipboard.writeText(JSON.stringify(DATA)).then(() => alert('配置已複製！')); }
+        function importConfig() { const input = prompt('貼上代碼：'); if (input) { DATA = JSON.parse(input); localStorage.setItem('than_m7_v1073', JSON.stringify(DATA)); run(); } }
+        function deleteAccount() { if (DATA.accounts.length > 1 && confirm('確定刪除？')) { DATA.accounts.splice(DATA.activeIndex, 1); DATA.activeIndex = 0; saveAndRun(); } }
+
+        window.onload = run;
+    </script>
+</body>
+</html>
