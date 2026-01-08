@@ -2,194 +2,229 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M7 戰略終端 | 通用共享版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>M7 戰略終端 v10.7 | Than陸仁 監製</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="manifest" href="manifest.json">
     <style>
-        :root { --m7-green: #10B981; --m7-rose: #F43F5E; --m7-bg: #0F172A; }
-        body { background-color: var(--m7-bg); color: #E2E8F0; font-family: sans-serif; }
-        .m7-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; backdrop-filter: blur(10px); }
+        :root { --m7-green: #10B981; --m7-red: #F43F5E; --m7-dark: #0F172A; }
+        body { background-color: var(--m7-dark); color: #F1F5F9; font-family: system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+        .m7-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; backdrop-filter: blur(12px); }
         .privacy-mask { transition: filter 0.3s; }
-        body.privacy-on .privacy-mask { filter: blur(12px); }
-        #settings-drawer { z-index: 1000; transition: transform 0.4s ease; }
+        body.privacy-on .privacy-mask { filter: blur(15px); }
+        #settings-drawer { z-index: 5000; transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
+        .slope-glow { text-shadow: 0 0 20px rgba(16,185,129,0.4); }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-32">
 
     <div class="max-w-6xl mx-auto space-y-6">
-        <header class="flex justify-between items-center border-b border-white/10 pb-6">
-            <div>
-                <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter">M7 UNIVERSAL</h1>
-                <p id="ui-sync-status" class="text-[10px] text-gray-500 font-bold uppercase mt-1">智能偵測系統已啟動</p>
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-white/10">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="M7" class="w-12 h-12 rounded-xl bg-white/5 p-1">
+                <div>
+                    <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter uppercase leading-none">M7 Command Center</h1>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2">v10.7 Wealth Velocity Edition</p>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="document.body.classList.toggle('privacy-on')" class="w-10 h-10 m7-card flex items-center justify-center text-xs">👁️</button>
-                <button onclick="toggleSettings()" class="w-10 h-10 m7-card border-emerald-500/50 border flex items-center justify-center text-xs">⚙️</button>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <select id="ui-acc-switcher" onchange="switchAccount(this.value)" class="flex-1 md:flex-none bg-white/5 border border-white/10 p-3 rounded-2xl text-sm font-bold outline-none cursor-pointer"></select>
+                <div class="flex gap-2">
+                    <button onclick="document.body.classList.toggle('privacy-on')" class="w-11 h-11 m7-card flex items-center justify-center">👁️</button>
+                    <button onclick="toggleSettings()" class="w-11 h-11 m7-card border-emerald-500/50 border flex items-center justify-center">⚙️</button>
+                </div>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="m7-card p-6 border-l-4 border-emerald-500">
-                <p class="text-[10px] text-gray-500 font-bold uppercase">總資產市值</p>
-                <p id="ui-total-assets" class="text-2xl font-black privacy-mask text-emerald-400">--</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="m7-card p-10 md:col-span-2 text-center flex flex-col justify-center">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 italic">Maintenance Ratio</p>
+                <div id="ui-ratio" class="text-6xl md:text-9xl font-black tracking-tighter text-emerald-400 privacy-mask">0%</div>
+                <div class="w-full mt-10 h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div id="ui-survival-bar" class="h-full bg-gradient-to-r from-rose-500 to-emerald-500 transition-all duration-1000"></div>
+                </div>
             </div>
-            <div class="m7-card p-6 border-l-4 border-rose-500">
-                <p class="text-[10px] text-gray-500 font-bold uppercase">質押總負債</p>
-                <p id="ui-total-debt" class="text-2xl font-black privacy-mask text-rose-400">--</p>
-            </div>
-            <div class="m7-card p-6 bg-gradient-to-br from-slate-800 to-slate-900">
-                <p class="text-[10px] text-gray-500 font-bold uppercase">當前維持率</p>
-                <p id="ui-ratio" class="text-4xl font-black italic">--%</p>
-            </div>
-        </div>
-
-        <div class="m7-card p-8">
-            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-emerald-400">資產再平衡指引</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm font-bold">
-                    <thead id="ui-table-head" class="text-gray-600 text-[10px] uppercase border-b border-white/5">
-                        <tr><th class="pb-4">代號</th><th class="pb-4 text-right">現價</th><th class="pb-4 text-right">實際%</th><th class="pb-4 text-right">目標%</th><th class="pb-4 text-right">操作建議</th></tr>
-                    </thead>
-                    <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
-                </table>
+            <div class="m7-card p-8 flex flex-col items-center justify-center border-t-4 border-emerald-500/30">
+                <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-4">Wealth Slope ($/Day)</p>
+                <div id="ui-slope" class="text-5xl font-black text-emerald-400 slope-glow privacy-mask">+0</div>
+                <div id="ui-slope-total" class="mt-2 text-xs font-bold text-gray-600 privacy-mask">Total Gain: NT$ 0</div>
+                <div class="mt-6 w-full pt-6 border-t border-white/5 text-center">
+                    <p id="ui-slope-desc" class="text-[9px] text-gray-500 leading-relaxed font-medium uppercase tracking-tighter">等待數據注入...</p>
+                </div>
             </div>
         </div>
 
-        <div class="m7-card p-8">
-            <h3 class="text-xs font-bold text-gray-500 mb-6 uppercase tracking-widest italic text-rose-400">📉 壓力測試</h3>
-            <div id="ui-stress-grid" class="grid grid-cols-3 gap-4"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="m7-card p-8">
+                <div class="flex justify-between items-end mb-6">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest italic flex items-center gap-2">
+                        <span class="w-1 h-4 bg-emerald-500 rounded-full"></span> Allocation
+                    </h3>
+                    <div id="ui-total-assets" class="text-xl font-black text-emerald-400 privacy-mask">NT$ 0</div>
+                </div>
+                <div class="flex flex-col md:flex-row gap-6 items-center">
+                    <canvas id="weightChart" class="max-w-[150px]"></canvas>
+                    <div class="flex-1 w-full"><table class="w-full text-left text-sm font-bold"><tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody></table></div>
+                </div>
+            </div>
+            <div class="m7-card p-8">
+                <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
+                    <span class="w-1 h-4 bg-rose-500 rounded-full"></span> Stress Test
+                </h3>
+                <div id="ui-stress-grid" class="grid grid-cols-3 gap-4"></div>
+            </div>
         </div>
     </div>
 
-    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-10 shadow-2xl border-l border-white/10 translate-x-full">
-        <div class="flex justify-between items-center mb-10 text-white">
-            <h3 class="text-2xl font-black italic uppercase">Terminal Setup</h3>
-            <button onclick="toggleSettings()" class="text-3xl">✕</button>
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-slate-900 p-8 shadow-2xl border-l border-white/10 translate-x-full overflow-y-auto">
+        <div class="flex justify-between items-center mb-10 border-b border-white/5 pb-4">
+            <h3 class="text-2xl font-black italic tracking-tighter text-white uppercase">Strategic Setup</h3>
+            <button onclick="toggleSettings()" class="text-white text-3xl px-4">✕</button>
         </div>
         <div class="space-y-6">
-            <div class="bg-white/5 p-6 rounded-3xl border border-white/10">
-                <label class="block text-[10px] text-gray-500 font-bold uppercase mb-2">Google Sheets CSV 連結</label>
-                <textarea id="cfg-csv-url" rows="4" class="bg-slate-800 w-full p-4 rounded-xl text-xs text-emerald-400 font-mono outline-none border border-white/10" placeholder="貼上 CSV 連結..."></textarea>
+            <div class="bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10 space-y-4">
+                <label class="text-[9px] text-emerald-500 font-bold block uppercase tracking-widest">Initial Context (宇宙起始點)</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[8px] text-gray-500 block mb-1">初始投入本金</label>
+                        <input type="number" id="cfg-init-cap" class="bg-slate-800 w-full p-3 rounded-xl text-sm font-bold outline-none border border-white/5" placeholder="300000">
+                    </div>
+                    <div>
+                        <label class="text-[8px] text-gray-500 block mb-1">起始日期</label>
+                        <input type="date" id="cfg-init-date" class="bg-slate-800 w-full p-3 rounded-xl text-sm font-bold outline-none border border-white/5">
+                    </div>
+                </div>
             </div>
-            <button onclick="saveAndSync()" class="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl shadow-xl active:scale-95 transition-transform">立即連動數據</button>
-            <div class="mt-10 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                <p class="text-xs font-bold text-emerald-400 mb-2">💡 如何建立通用版試算表？</p>
-                <ul class="text-[10px] text-gray-400 space-y-1 list-disc pl-4">
-                    <li>表格需包含：代號、現價、市值、目標%、建議操作</li>
-                    <li>需包含關鍵字：質押總借款、目前維持率</li>
-                    <li>將 Google 試算表「發佈到網路」並選擇 CSV 格式</li>
-                </ul>
+
+            <div class="bg-white/5 p-6 rounded-3xl space-y-5 border border-white/5">
+                <div><label class="text-[9px] text-gray-500 font-bold block mb-2 uppercase tracking-widest">Account Name</label><input id="cfg-acc-name" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold outline-none border border-white/5" placeholder="例如：質押核心戶"></div>
+                <div><label class="text-[9px] text-gray-500 font-bold block mb-2 uppercase tracking-widest">Pledge Debt (NT$)</label><input type="number" id="cfg-debt" class="bg-slate-800 w-full p-4 rounded-xl text-xl font-black text-rose-400 outline-none border border-white/5" placeholder="0"></div>
             </div>
+            
+            <div class="space-y-4">
+                <div class="flex justify-between items-center px-1"><label class="text-xs text-gray-400 font-bold uppercase italic tracking-widest">Asset Allocation</label><button onclick="addAssetRow()" class="text-[10px] px-5 py-2 bg-emerald-500 text-white rounded-full font-black uppercase">+ ADD ASSET</button></div>
+                <div id="cfg-asset-rows" class="space-y-3"></div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="exportConfig()" class="flex-1 py-3 bg-white/5 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-[10px] uppercase">匯出配置</button>
+                <button onclick="importConfig()" class="flex-1 py-3 bg-white/5 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-[10px] uppercase">匯入配置</button>
+            </div>
+            
+            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-500 text-white font-black rounded-3xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all mt-4 text-sm uppercase tracking-widest">Save & Deploy</button>
+            <button onclick="deleteAccount()" class="w-full py-3 bg-rose-500/10 text-rose-400 rounded-xl font-bold text-[10px] uppercase tracking-widest">Delete Current Account</button>
         </div>
     </div>
 
     <script>
-        let CONFIG = { csvUrl: localStorage.getItem('than_m7_csv') || '' };
-        function toggleSettings() { document.getElementById('settings-drawer').classList.toggle('translate-x-full'); }
-        
-        async function saveAndSync() {
-            CONFIG.csvUrl = document.getElementById('cfg-csv-url').value.trim();
-            localStorage.setItem('than_m7_csv', CONFIG.csvUrl);
-            toggleSettings();
-            await fetchData();
+        let DATA = JSON.parse(localStorage.getItem('than_m7_v107')) || {
+            activeIndex: 0,
+            accounts: [{ name: '我的質押帳號', debt: 0, initCap: 300000, initDate: '2024-07-01', assets: [] }]
+        };
+        let myChart;
+
+        function toggleSettings() { 
+            const drawer = document.getElementById('settings-drawer');
+            drawer.classList.toggle('translate-x-full');
+            if (!drawer.classList.contains('translate-x-full')) loadSettings(); 
         }
 
-        function cleanVal(str) {
-            if (!str) return 0;
-            const cleaned = str.toString().replace(/[%,$]/g, '').replace(/,/g, '').trim();
-            return parseFloat(cleaned) || 0;
+        function loadSettings() {
+            const acc = DATA.accounts[DATA.activeIndex];
+            document.getElementById('cfg-acc-name').value = acc.name || '';
+            document.getElementById('cfg-debt').value = acc.debt || 0;
+            document.getElementById('cfg-init-cap').value = acc.initCap || 300000;
+            document.getElementById('cfg-init-date').value = acc.initDate || '2024-07-01';
+            const container = document.getElementById('cfg-asset-rows');
+            container.innerHTML = '';
+            if (acc.assets) acc.assets.forEach(a => addAssetRow(a.code, a.val, a.target));
         }
 
-        async function fetchData() {
-            if (!CONFIG.csvUrl) return;
-            const status = document.getElementById('ui-sync-status');
-            try {
-                const response = await fetch(CONFIG.csvUrl + (CONFIG.csvUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime());
-                const csvData = await response.text();
-                processUniversalData(csvData);
-                status.innerText = `Updated: ${new Date().toLocaleTimeString()}`;
-            } catch (e) { status.innerText = "❌ 連線失敗"; }
+        function addAssetRow(code='', val='', target='') {
+            const div = document.createElement('div');
+            div.className = "bg-white/5 p-4 rounded-2xl flex flex-wrap gap-2 items-center border border-white/5";
+            div.innerHTML = `<input type="text" placeholder="代號" class="flex-1 bg-slate-800 p-3 rounded-xl text-xs cfg-a-code font-bold outline-none" value="${code}"><input type="number" placeholder="市值" class="w-[35%] bg-slate-800 p-3 rounded-xl text-xs cfg-a-val font-bold outline-none" value="${val}"><input type="number" placeholder="%" class="w-[20%] bg-slate-800 p-3 rounded-xl text-xs cfg-a-target font-bold outline-none" value="${target}"><button onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2 text-xl">✕</button>`;
+            document.getElementById('cfg-asset-rows').appendChild(div);
         }
 
-        function processUniversalData(csv) {
-            // 解析 CSV 處理引號
-            const rows = csv.split(/\r?\n/).filter(r => r.trim()).map(row => {
-                return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
-            });
+        function saveAndRun() {
+            const acc = DATA.accounts[DATA.activeIndex];
+            acc.name = document.getElementById('cfg-acc-name').value;
+            acc.debt = parseFloat(document.getElementById('cfg-debt').value) || 0;
+            acc.initCap = parseFloat(document.getElementById('cfg-init-cap').value) || 0;
+            acc.initDate = document.getElementById('cfg-init-date').value;
+            const codes = document.querySelectorAll('.cfg-a-code'), vals = document.querySelectorAll('.cfg-a-val'), targets = document.querySelectorAll('.cfg-a-target');
+            acc.assets = [];
+            codes.forEach((c, i) => { if (c.value) acc.assets.push({ code: c.value, val: parseFloat(vals[i].value) || 0, target: parseFloat(targets[i].value) || 0 }); });
+            localStorage.setItem('than_m7_v107', JSON.stringify(DATA));
+            document.getElementById('settings-drawer').classList.add('translate-x-full');
+            run();
+        }
 
-            // 🎯 智能偵測欄位索引
-            let colMap = { code: -1, price: -1, value: -1, target: -1, actual: -1, suggest: -1 };
-            let headerRowIdx = -1;
+        function run() {
+            const acc = DATA.accounts[DATA.activeIndex] || DATA.accounts[0];
+            const totalAsset = acc.assets.reduce((sum, a) => sum + a.val, 0);
+            const netWorth = totalAsset - acc.debt;
+            const ratio = acc.debt > 0 ? Math.round((totalAsset / acc.debt) * 100) : 0;
+            const survival = ratio > 0 ? Math.round((1 - (160 / ratio)) * 100) : 0;
 
-            rows.forEach((row, rIdx) => {
-                if (row.includes("代號") || row.includes("Ticker")) {
-                    headerRowIdx = rIdx;
-                    row.forEach((cell, cIdx) => {
-                        if (cell.includes("代號") || cell.includes("Ticker")) colMap.code = cIdx;
-                        if (cell.includes("現價") || cell.includes("Price")) colMap.price = cIdx;
-                        if (cell.includes("台幣市值") || cell.includes("市值")) colMap.value = cIdx;
-                        if (cell.includes("目標")) colMap.target = cIdx;
-                        if (cell.includes("實際")) colMap.actual = cIdx;
-                        if (cell.includes("建議")) colMap.suggest = cIdx;
-                    });
-                }
-            });
+            // 維持率與標籤
+            document.getElementById('ui-ratio').innerText = (ratio > 2000 ? '>2000' : (ratio === 0 ? '0' : ratio)) + '%';
+            document.getElementById('ui-ratio').style.color = (ratio > 0 && ratio < 180) ? 'var(--m7-red)' : 'var(--m7-green)';
+            document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalAsset).toLocaleString()}`;
+            document.getElementById('ui-survival-bar').style.width = Math.max(0, Math.min(100, survival)) + '%';
 
-            // 🎯 提取關鍵指標 (搜尋全表)
-            let debt = 0, ratio = "--", stress = [];
-            rows.forEach(row => {
-                row.forEach((cell, cIdx) => {
-                    if (cell === "質押總借款") debt = cleanVal(row[cIdx + 1]);
-                    if (cell === "目前維持率") ratio = row[cIdx + 1];
-                    if (cell.includes("股災")) stress.push({ label: cell.replace("股災 ", ""), val: row[cIdx + 1] });
-                });
-            });
-
-            // 🎯 提取資產數據
-            let assets = [], totalAssetValue = 0;
-            if (headerRowIdx !== -1) {
-                for (let i = headerRowIdx + 1; i < rows.length; i++) {
-                    const r = rows[i];
-                    if (r[colMap.code]) {
-                        const v = cleanVal(r[colMap.value]);
-                        totalAssetValue += v;
-                        assets.push({
-                            code: r[colMap.code],
-                            price: r[colMap.price] || "--",
-                            actual: r[colMap.actual] || "--",
-                            target: r[colMap.target] || "--",
-                            suggest: r[colMap.suggest] || "--",
-                            val: v
-                        });
-                    } else { break; } // 碰到空行停止
-                }
+            // 斜率計算 (微積分邏輯)
+            if (acc.initDate && acc.initCap) {
+                const days = Math.max(1, (new Date() - new Date(acc.initDate)) / (1000 * 60 * 60 * 24));
+                const totalGain = netWorth - acc.initCap;
+                const slope = Math.round(totalGain / days);
+                document.getElementById('ui-slope').innerText = (slope >= 0 ? '+' : '') + slope.toLocaleString();
+                document.getElementById('ui-slope-total').innerText = `Total Gain: NT$ ${Math.round(totalGain).toLocaleString()}`;
+                const dailySalary = 40000 / 30; // 以保全月薪4萬計算
+                const multiplier = (slope / dailySalary).toFixed(1);
+                document.getElementById('ui-slope-desc').innerText = `當前財富流速約為每日薪水的 ${multiplier} 倍`;
             }
 
-            // 更新介面
-            document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalAssetValue).toLocaleString()}`;
-            document.getElementById('ui-total-debt').innerText = `NT$ ${debt.toLocaleString()}`;
-            document.getElementById('ui-ratio').innerText = ratio.includes('%') ? ratio : ratio + '%';
-            document.getElementById('ui-ratio').style.color = cleanVal(ratio) < 180 ? 'var(--m7-rose)' : 'var(--m7-emerald)';
+            // 資產表格
+            document.getElementById('ui-asset-table').innerHTML = acc.assets.map(a => {
+                const diff = (totalAsset * (a.target / 100)) - a.val;
+                return `<tr><td class="py-3 text-xs uppercase">${a.code}</td><td class="text-right text-[10px] text-gray-500">${a.target}%</td><td class="text-right text-xs ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Math.round(diff).toLocaleString()}</td></tr>`;
+            }).join('');
 
-            document.getElementById('ui-asset-table').innerHTML = assets.map(a => `
-                <tr class="border-b border-white/5">
-                    <td class="py-4 font-bold">${a.code}</td>
-                    <td class="text-right">${a.price}</td>
-                    <td class="text-right text-gray-400">${a.actual}</td>
-                    <td class="text-right text-emerald-400/50">${a.target}</td>
-                    <td class="text-right font-black ${cleanVal(a.suggest) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${a.suggest}</td>
-                </tr>
-            `).join('');
+            // 壓力測試
+            document.getElementById('ui-stress-grid').innerHTML = [10, 20, 30, 40, 50, 60].map(d => {
+                const sRatio = acc.debt > 0 ? Math.round((totalAsset * (1 - d/100) / acc.debt) * 100) : 0;
+                return `<div class="bg-white/5 p-3 rounded-xl text-center border border-white/5">
+                    <p class="text-[8px] text-gray-500 mb-1">-${d}%</p>
+                    <p class="text-sm font-black ${sRatio > 0 && sRatio < 160 ? 'text-rose-400' : 'text-emerald-400'}">${sRatio > 0 ? sRatio + '%' : '--%'}</p>
+                </div>`;
+            }).join('');
 
-            document.getElementById('ui-stress-grid').innerHTML = stress.map(s => `
-                <div class="bg-white/5 p-4 rounded-2xl text-center border border-white/5">
-                    <p class="text-[9px] text-gray-500 font-bold mb-1">${s.label}</p>
-                    <p class="text-lg font-black text-rose-400">${s.val}</p>
-                </div>
-            `).join('');
+            updateChart(acc.assets);
+            updateSwitcher();
         }
 
-        window.onload = () => { if (CONFIG.csvUrl) fetchData(); setInterval(fetchData, 60000); };
+        function updateChart(assets) {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            if (assets.length === 0) return;
+            myChart = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: assets.map(a => a.val), backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#F43F5E', '#8B5CF6'], borderWidth: 0 }] }, options: { plugins: { legend: { display: false } }, cutout: '80%' } });
+        }
+
+        function updateSwitcher() {
+            const select = document.getElementById('ui-acc-switcher');
+            select.innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}" ${i === DATA.activeIndex ? 'selected' : ''}>${acc.name}</option>`).join('');
+        }
+        function switchAccount(idx) { DATA.activeIndex = parseInt(idx); run(); }
+        function exportConfig() { navigator.clipboard.writeText(JSON.stringify(DATA)).then(() => alert('戰略配置已複製！')); }
+        function importConfig() { const input = prompt('貼上代碼：'); if (input) { DATA = JSON.parse(input); localStorage.setItem('than_m7_v107', JSON.stringify(DATA)); run(); } }
+        function deleteAccount() { if (DATA.accounts.length > 1) { DATA.accounts.splice(DATA.activeIndex, 1); DATA.activeIndex = 0; saveAndRun(); } }
+
+        window.onload = run;
     </script>
 </body>
 </html>
