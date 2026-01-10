@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M7 戰略終端 v10.7 | Than陸仁 監製</title>
+    <title>M7 戰略終端 v10.8 | Than陸仁 監製</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="icon" href="logo.png" type="image/png">
-    <link rel="apple-touch-icon" href="logo.png">
-    <link rel="manifest" href="manifest.json">
     <style>
         :root { --m7-green: #10B981; --m7-red: #F43F5E; --m7-dark: #0F172A; }
         body { background-color: var(--m7-dark); color: #F1F5F9; font-family: system-ui, -apple-system, sans-serif; overflow-x: hidden; }
@@ -21,6 +18,8 @@
         .logo-glow { transition: transform 0.5s; cursor: pointer; z-index: 100; }
         .logo-glow:hover { transform: rotate(10deg) scale(1.1); filter: drop-shadow(0 0 10px rgba(16,185,129,0.5)); }
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        /* EXP Bar Animation */
+        .exp-glow { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-32">
@@ -33,11 +32,7 @@
                 </a>
                 <div>
                     <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter uppercase leading-none">M7 Command Center</h1>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] mt-2">
-                        <a href="https://www.youtube.com/@ericZang1985" target="_blank" class="yt-link text-gray-500 hover:text-emerald-400 transition-colors">
-                            Than陸仁 官方頻道 | 戰略共享 ↗
-                        </a>
-                    </p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] mt-2 italic text-gray-500">Than陸仁 | 戰略遊戲化終端</p>
                 </div>
             </div>
             <div class="flex items-center gap-3 w-full md:w-auto">
@@ -48,6 +43,23 @@
                 </div>
             </div>
         </header>
+
+        <div class="m7-card p-8 border-t-4 border-emerald-500 relative overflow-hidden">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <p id="ui-lv-tag" class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em] mb-1">Level 1</p>
+                    <h2 id="ui-lv-name" class="text-3xl font-black italic tracking-tighter text-white uppercase">核心擴張階段</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase">Strategic EXP</p>
+                    <p id="ui-exp-percent" class="text-xl font-black text-emerald-400 italic">0%</p>
+                </div>
+            </div>
+            <div class="w-full h-4 bg-white/5 rounded-full p-1 overflow-hidden">
+                <div id="ui-exp-bar" class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all duration-1000 exp-glow" style="width: 0%"></div>
+            </div>
+            <div id="ui-lv-advice" class="mt-4 text-[11px] font-bold text-gray-400 italic tracking-wide uppercase">系統掃描中...</div>
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="m7-card p-10 md:col-span-2 text-center relative overflow-hidden flex flex-col justify-center">
@@ -64,22 +76,15 @@
             </div>
         </div>
 
-        <div class="m7-card p-6 border-l-4 border-emerald-500 mb-6 bg-emerald-500/5">
-            <div id="ui-leverage-command">
-                <p class="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mb-2">Strategic Leverage Command</p>
-                <div id="lev-advice" class="text-xl font-black italic text-emerald-400">系統初始化中...</div>
-                <div id="lev-stats" class="text-[10px] text-gray-500 mt-2 font-bold tracking-widest uppercase"></div>
-            </div>
-        </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="m7-card p-8">
                 <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
-                    <span class="w-1 h-4 bg-emerald-500 rounded-full"></span> 再平衡戰略指令
+                    <span class="w-1 h-4 bg-emerald-500 rounded-full"></span> 再平衡指令
                 </h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm font-bold">
                         <thead class="text-gray-600 text-[10px] uppercase border-b border-white/5">
-                            <tr><th class="pb-4">標的</th><th class="pb-4 text-right">目標 %</th><th class="pb-4 text-right">操作建議 (NT$)</th></tr>
+                            <tr><th class="pb-4">標的</th><th class="pb-4 text-right">目標 %</th><th class="pb-4 text-right">操作 (NT$)</th></tr>
                         </thead>
                         <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
                     </table>
@@ -87,16 +92,16 @@
             </div>
             <div class="m7-card p-8">
                 <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
-                    <span class="w-1 h-4 bg-rose-500 rounded-full"></span> 壓力測試：極端崩盤模擬
+                    <span class="w-1 h-4 bg-rose-500 rounded-full"></span> 壓力測試
                 </h3>
                 <div id="ui-stress-grid" class="grid grid-cols-3 gap-4"></div>
             </div>
         </div>
 
         <footer class="mt-12 text-center py-12 border-t border-white/5">
-            <p class="text-[10px] text-gray-600 font-black tracking-[0.4em] uppercase mb-4 italic">ThanLuren M7 Operational System</p>
-            <a href="https://www.youtube.com/@ericZang1985" target="_blank" class="inline-flex items-center gap-2 px-8 py-4 bg-white/5 rounded-full border border-white/10 text-xs font-bold text-gray-400 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all active:scale-95 shadow-lg">
-                <span class="text-rose-500 animate-pulse">●</span> 訂閱 Than陸仁 | 解鎖更多質押戰略 ↗
+            <p class="text-[10px] text-gray-600 font-black tracking-[0.4em] uppercase mb-4 italic">ThanLuren M7 OS v10.8</p>
+            <a href="https://www.youtube.com/@ericZang1985" target="_blank" class="inline-flex items-center gap-2 px-8 py-4 bg-white/5 rounded-full border border-white/10 text-xs font-bold text-gray-400 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all shadow-lg">
+                <span class="text-rose-500 animate-pulse">●</span> 訂閱 Than陸仁 獲取戰略更新 ↗
             </a>
         </footer>
     </div>
@@ -107,14 +112,6 @@
             <button onclick="toggleSettings()" class="text-3xl hover:text-rose-500 transition-colors px-4">✕</button>
         </div>
         <div class="space-y-8">
-            <div class="bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10 space-y-4">
-                <label class="text-[9px] text-emerald-500/60 font-bold block uppercase tracking-widest text-center">戰略代碼同步 (跨裝置遷移)</label>
-                <div class="flex gap-2">
-                    <button onclick="exportConfig()" class="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold text-[10px] uppercase">匯出配置</button>
-                    <button onclick="importConfig()" class="flex-1 py-3 bg-white/5 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-[10px] uppercase">匯入配置</button>
-                </div>
-            </div>
-
             <div class="flex gap-2">
                 <button onclick="addAccount()" class="flex-1 py-4 bg-emerald-500/10 text-emerald-400 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-emerald-500/20 hover:bg-emerald-500/20 transition-all">+ NEW ACCOUNT</button>
                 <button onclick="deleteAccount()" class="px-6 py-4 bg-rose-500/10 text-rose-400 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-rose-500/20 hover:bg-rose-500/20 transition-all">DEL</button>
@@ -132,18 +129,10 @@
     </div>
 
     <script>
-        let DATA = JSON.parse(localStorage.getItem('than_m7_final')) || {
-            activeIndex: 0,
-            accounts: [{ name: '我的質押帳號', debt: 0, assets: [] }]
-        };
+        let DATA = JSON.parse(localStorage.getItem('than_m7_final')) || { activeIndex: 0, accounts: [{ name: '我的質押帳號', debt: 0, assets: [] }] };
         let myChart;
 
-        function toggleSettings() { 
-            const drawer = document.getElementById('settings-drawer');
-            drawer.classList.toggle('translate-x-full');
-            if (!drawer.classList.contains('translate-x-full')) loadSettings(); 
-        }
-
+        function toggleSettings() { const d = document.getElementById('settings-drawer'); d.classList.toggle('translate-x-full'); if (!d.classList.contains('translate-x-full')) loadSettings(); }
         function loadSettings() {
             const acc = DATA.accounts[DATA.activeIndex] || { name: '', debt: 0, assets: [] };
             document.getElementById('cfg-acc-name').value = acc.name || '';
@@ -153,53 +142,16 @@
             if (acc.assets) acc.assets.forEach(a => addAssetRow(a.code, a.val, a.target));
         }
 
-        // 🎯 匯出功能
-        function exportConfig() {
-            const configStr = JSON.stringify(DATA);
-            navigator.clipboard.writeText(configStr).then(() => {
-                alert('戰略代碼已複製到剪貼簿！請到另一台裝置貼上匯入。');
-            });
-        }
-
-        // 🎯 匯入功能
-        function importConfig() {
-            const input = prompt('請直接貼上匯出的戰略代碼：');
-            if (input) {
-                try {
-                    const parsed = JSON.parse(input);
-                    if (parsed.accounts) {
-                        DATA = parsed;
-                        localStorage.setItem('than_m7_final', JSON.stringify(DATA));
-                        updateSwitcher();
-                        run();
-                        alert('同步成功！');
-                    }
-                } catch (e) {
-                    alert('無效的代碼，請重新複製。');
-                }
-            }
-        }
-
         function addAssetRow(code='', val='', target='') {
             const div = document.createElement('div');
             div.className = "bg-white/5 p-4 rounded-2xl flex flex-wrap gap-2 items-center border border-white/5";
-            div.innerHTML = `
-                <input type="text" placeholder="代號" class="flex-1 bg-slate-800 p-3 rounded-xl text-xs cfg-a-code font-bold outline-none" value="${code}">
-                <input type="number" placeholder="市值" class="w-[35%] bg-slate-800 p-3 rounded-xl text-xs cfg-a-val font-bold outline-none" value="${val}">
-                <input type="number" placeholder="%" class="w-[20%] bg-slate-800 p-3 rounded-xl text-xs cfg-a-target font-bold outline-none" value="${target}">
-                <button onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2 text-xl hover:scale-125 transition-transform">✕</button>
-            `;
+            div.innerHTML = `<input type="text" placeholder="代號" class="flex-1 bg-slate-800 p-3 rounded-xl text-xs cfg-a-code font-bold outline-none" value="${code}"><input type="number" placeholder="市值" class="w-[35%] bg-slate-800 p-3 rounded-xl text-xs cfg-a-val font-bold outline-none" value="${val}"><input type="number" placeholder="%" class="w-[20%] bg-slate-800 p-3 rounded-xl text-xs cfg-a-target font-bold outline-none" value="${target}"><button onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2 text-xl hover:scale-125 transition-transform">✕</button>`;
             document.getElementById('cfg-asset-rows').appendChild(div);
         }
 
         function addAccount() { DATA.accounts.push({ name: '新帳號', debt: 0, assets: [] }); DATA.activeIndex = DATA.accounts.length - 1; saveAndRun(); }
-        function deleteAccount() { 
-            if (DATA.accounts.length <= 1) { DATA.accounts = [{ name: '我的質押帳號', debt: 0, assets: [] }]; DATA.activeIndex = 0; }
-            else { DATA.accounts.splice(DATA.activeIndex, 1); DATA.activeIndex = 0; }
-            saveAndRun();
-        }
+        function deleteAccount() { if (DATA.accounts.length <= 1) { DATA.accounts = [{ name: '我的質押帳號', debt: 0, assets: [] }]; DATA.activeIndex = 0; } else { DATA.accounts.splice(DATA.activeIndex, 1); DATA.activeIndex = 0; } saveAndRun(); }
         function switchAccount(idx) { DATA.activeIndex = parseInt(idx); run(); }
-
         function saveAndRun() {
             const acc = DATA.accounts[DATA.activeIndex];
             acc.name = document.getElementById('cfg-acc-name').value;
@@ -209,20 +161,16 @@
             codes.forEach((c, i) => { if (c.value) acc.assets.push({ code: c.value, val: parseFloat(vals[i].value) || 0, target: parseFloat(targets[i].value) || 0 }); });
             localStorage.setItem('than_m7_final', JSON.stringify(DATA));
             updateSwitcher();
-            if (!document.getElementById('settings-drawer').classList.contains('translate-x-full')) {
-                document.getElementById('settings-drawer').classList.add('translate-x-full');
-            }
+            document.getElementById('settings-drawer').classList.add('translate-x-full');
             run();
         }
 
-        function updateSwitcher() {
-            const select = document.getElementById('ui-acc-switcher');
-            select.innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}" ${i === DATA.activeIndex ? 'selected' : ''}>${acc.name || '未命名帳號'}</option>`).join('');
-        }
+        function updateSwitcher() { const s = document.getElementById('ui-acc-switcher'); s.innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}" ${i === DATA.activeIndex ? 'selected' : ''}>${acc.name || '未命名'}</option>`).join(''); }
 
         function run() {
             const acc = DATA.accounts[DATA.activeIndex] || { debt: 0, assets: [] };
             const totalAsset = acc.assets.reduce((sum, a) => sum + a.val, 0);
+            const netWorth = totalAsset - acc.debt;
             const ratio = (acc.debt > 0 && totalAsset > 0) ? Math.round((totalAsset / acc.debt) * 100) : 0;
             const survival = ratio > 0 ? Math.round((1 - (160 / ratio)) * 100) : 0;
 
@@ -231,49 +179,32 @@
             document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalAsset).toLocaleString()}`;
             document.getElementById('ui-survival-bar').style.width = Math.max(0, Math.min(100, survival)) + '%';
 
-            // --- NEW: Strategic Leverage Command Logic ---
-            const netWorth = totalAsset - acc.debt; // 淨資產
-            const realLeverage = netWorth > 0 ? (totalAsset / netWorth).toFixed(2) : 0; // 實質槓桿
-            
-            let advice = "核心擴張：維持 2.5x 獲利加速";
-            let targetLev = 2.5;
-            let statusColor = "text-emerald-400"; // Default green color
-
-            if (netWorth >= 10000000) { // 淨值達到 1000 萬 NTD
-                advice = "最終收割：建議槓桿降至 1.5x 鎖定勝局";
-                targetLev = 1.5;
-                statusColor = "text-amber-400"; // Yellow for conservative
-            } else if (netWorth >= 5000000) { // 淨值達到 500 萬 NTD
-                advice = "戰略穩固：建議槓桿降至 2.0x 規避震盪";
-                targetLev = 2.0;
-                statusColor = "text-emerald-300"; // Lighter green for stable
+            // 🏆 Level & EXP Logic
+            let lv = 1, name = "核心擴張階段", exp = 0, advice = "維持 2.5x 槓桿，快速累積淨值。";
+            if (netWorth >= 10000000) {
+                lv = 3; name = "終極收割階段"; exp = 100; advice = "戰略大成功！建議槓桿 1.5x 以下，守護老樹精。";
+            } else if (netWorth >= 5000000) {
+                lv = 2; name = "戰略穩固階段"; exp = Math.round(((netWorth - 5000000) / 5000000) * 100); advice = "資產已具規模，建議降槓桿至 2.0x 避免大型回撤。";
+            } else {
+                exp = Math.round((Math.max(0, netWorth) / 5000000) * 100);
             }
 
-            // Update leverage command interface
-            document.getElementById('lev-advice').innerText = advice;
-            document.getElementById('lev-advice').className = `text-xl font-black italic ${statusColor}`;
-            document.getElementById('lev-stats').innerText = 
-                `NET WORTH: NT$ ${Math.round(netWorth).toLocaleString()} | REAL LEV: ${realLeverage}x | LIMIT: ${targetLev}x`;
-            // --- END NEW ---
+            document.getElementById('ui-lv-tag').innerText = `Level ${lv}`;
+            document.getElementById('ui-lv-name').innerText = name;
+            document.getElementById('ui-exp-percent').innerText = `${exp}%`;
+            document.getElementById('ui-exp-bar').style.width = `${exp}%`;
+            document.getElementById('ui-lv-advice').innerText = `> ${advice} | REAL LEV: ${(netWorth > 0 ? totalAsset/netWorth : 0).toFixed(2)}x`;
 
             const tbody = document.getElementById('ui-asset-table');
-            if (acc.assets.length > 0) {
-                tbody.innerHTML = acc.assets.map(a => {
-                    const diffTWD = (totalAsset * (a.target / 100)) - a.val;
-                    return `<tr><td class="py-5 font-bold text-lg">${a.code}</td><td class="text-right text-gray-500 font-bold">${a.target}%</td><td class="text-right font-black ${diffTWD >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Math.round(diffTWD).toLocaleString()}</td></tr>`;
-                }).join('');
-            } else {
-                tbody.innerHTML = '<tr><td colspan="3" class="py-10 text-center text-gray-500 italic">請點擊上方 ⚙️ 建立配置</td></tr>';
-            }
+            tbody.innerHTML = acc.assets.length > 0 ? acc.assets.map(a => {
+                const diff = (totalAsset * (a.target / 100)) - a.val;
+                return `<tr><td class="py-5 font-bold text-lg">${a.code}</td><td class="text-right text-gray-500 font-bold">${a.target}%</td><td class="text-right font-black ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Math.round(diff).toLocaleString()}</td></tr>`;
+            }).join('') : '<tr><td colspan="3" class="py-10 text-center text-gray-500 italic">無配置數據</td></tr>';
 
             const stressGrid = document.getElementById('ui-stress-grid');
-            const drops = [10, 20, 30, 40, 50, 60];
-            stressGrid.innerHTML = drops.map(d => {
+            stressGrid.innerHTML = [10, 20, 30, 40, 50, 60].map(d => {
                 const sRatio = (acc.debt > 0 && totalAsset > 0) ? Math.round((totalAsset * (1 - d/100) / acc.debt) * 100) : 0;
-                return `<div class="bg-white/5 p-4 rounded-2xl text-center border border-white/5 ${sRatio === 0 ? 'opacity-40' : ''}">
-                    <p class="text-[9px] text-gray-500 font-bold mb-1">-${d}%</p>
-                    <p class="text-lg font-black ${sRatio > 0 && sRatio < 160 ? 'text-rose-400' : 'text-emerald-400'}">${sRatio > 0 ? sRatio + '%' : '--%'}</p>
-                </div>`;
+                return `<div class="bg-white/5 p-4 rounded-2xl text-center border border-white/5"><p class="text-[9px] text-gray-500 font-bold mb-1">-${d}%</p><p class="text-lg font-black ${sRatio > 0 && sRatio < 160 ? 'text-rose-400' : 'text-emerald-400'}">${sRatio > 0 ? sRatio + '%' : '--%'}</p></div>`;
             }).join('');
             updateChart(acc.assets);
         }
@@ -282,14 +213,7 @@
             const ctx = document.getElementById('weightChart').getContext('2d');
             if (myChart) myChart.destroy();
             if (!assets || assets.length === 0) return;
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: assets.map(a => a.code),
-                    datasets: [{ data: assets.map(a => a.val), backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#F43F5E', '#8B5CF6'], borderWidth: 0 }]
-                },
-                options: { plugins: { legend: { display: false } }, cutout: '82%' }
-            });
+            myChart = new Chart(ctx, { type: 'doughnut', data: { labels: assets.map(a => a.code), datasets: [{ data: assets.map(a => a.val), backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#F43F5E', '#8B5CF6'], borderWidth: 0 }] }, options: { plugins: { legend: { display: false } }, cutout: '82%' } });
         }
         window.onload = () => { updateSwitcher(); run(); };
     </script>
