@@ -7,91 +7,117 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="./style.css">
+    <style>
+        .m7-label { font-size: 11px; font-weight: 800; color: #94a3b8; margin-bottom: 4px; display: block; text-transform: uppercase; }
+        .m7-input { background: #1e293b; width: 100%; padding: 12px; border-radius: 12px; font-weight: 700; outline: none; border: 1px solid rgba(255,255,255,0.1); color: white; }
+    </style>
 </head>
-<body class="p-4 md:p-8 pb-32 bg-[#0F172A] text-slate-100">
+<body class="bg-[#0F172A] text-slate-100 p-4 md:p-8 pb-32">
     <div class="max-w-6xl mx-auto space-y-6">
         <header class="flex justify-between items-center pb-6 border-b border-white/10">
             <div class="flex items-center gap-4">
-                <img src="./logo.png" alt="M7" class="w-12 h-12 rounded-xl bg-white/5 p-1" onerror="this.src='https://ui-avatars.com/api/?name=Than&background=10B981&color=fff'">
+                <img src="./logo.png" alt="M7" class="w-12 h-12 rounded-xl" onerror="this.src='https://ui-avatars.com/api/?name=Than&background=10B981&color=fff'">
                 <div>
-                    <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter uppercase leading-none">M7 Command Center</h1>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] mt-2 italic text-gray-500">Than陸仁 | 戰略精算 v11.1</p>
+                    <h1 class="text-2xl font-black italic text-emerald-400">M7 COMMAND CENTER</h1>
+                    <p class="text-[10px] font-bold text-gray-500 italic">THAN陸仁 | 戰略精算 V11.1</p>
                 </div>
             </div>
-            <button id="gear-btn" onclick="toggleSettings()" class="w-11 h-11 bg-slate-800 border border-emerald-500/50 rounded-2xl flex items-center justify-center text-xl">⚙️</button>
+            <button onclick="toggleSettings()" class="w-11 h-11 bg-slate-800 border border-emerald-500/50 rounded-2xl flex items-center justify-center text-xl">⚙️</button>
         </header>
 
-        <div class="m7-card p-8 border-t-4 border-emerald-500 bg-slate-800/50 rounded-[28px]">
+        <div class="m7-card p-8 bg-slate-800/50 rounded-[28px] border-t-4 border-emerald-500">
             <div class="flex justify-between items-end mb-4">
-                <h2 id="ui-lv-name" class="text-3xl font-black italic uppercase">等待設定中</h2>
-                <p id="ui-exp-percent" class="text-xl font-black text-emerald-400">0%</p>
+                <div>
+                    <p id="ui-lv-tag" class="text-[10px] font-black text-emerald-500">LEVEL 1</p>
+                    <h2 id="ui-lv-name" class="text-3xl font-black italic">核心擴張階段</h2>
+                </div>
+                <p id="ui-exp-percent" class="text-xl font-black text-emerald-400 italic">0%</p>
             </div>
-            <div class="w-full h-4 bg-white/5 rounded-full overflow-hidden">
-                <div id="ui-exp-bar" class="h-full bg-emerald-500" style="width: 0%"></div>
+            <div class="w-full h-4 bg-white/5 rounded-full p-1 overflow-hidden">
+                <div id="ui-exp-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
             </div>
-            <p id="ui-slope-info" class="mt-4 text-[10px] text-emerald-500/60 font-bold uppercase">淨值抗跌斜率: 0.0000%</p>
+            <p id="ui-slope-info" class="mt-4 text-[10px] text-emerald-500/60 font-bold uppercase">淨值抗跌斜率: 0.0000% / MONTH</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="m7-card p-10 bg-slate-800/50 rounded-[28px] text-center">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Maintenance Ratio</p>
-                <div id="ui-ratio" class="text-7xl font-black text-emerald-400">0%</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="m7-card p-10 md:col-span-2 bg-slate-800/50 rounded-[28px] text-center flex flex-col justify-center">
+                <p class="text-xs font-bold text-gray-500 uppercase italic">Maintenance Ratio</p>
+                <div id="ui-ratio" class="text-7xl md:text-9xl font-black text-emerald-400">0%</div>
             </div>
-            <div class="m7-card p-8 bg-slate-800/50 rounded-[28px] flex flex-col items-center">
+            <div class="m7-card p-8 bg-slate-800/50 rounded-[28px] flex flex-col items-center justify-center">
                 <canvas id="weightChart"></canvas>
                 <div id="ui-total-assets" class="mt-6 text-xl font-black text-emerald-400">NT$ 0</div>
+                <p class="text-[10px] text-gray-600 font-bold">TOTAL MARKET VALUE</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="m7-card p-8 bg-slate-800/50 rounded-[28px]">
+                <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic">[ 再平衡戰略指令 ]</h3>
+                <table class="w-full text-left text-sm font-bold">
+                    <thead class="text-gray-600 text-[10px] uppercase border-b border-white/5">
+                        <tr><th class="pb-4">標的</th><th class="pb-4 text-right">目標 %</th><th class="pb-4 text-right">操作 (NT$)</th></tr>
+                    </thead>
+                    <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
+                </table>
+            </div>
+            <div class="m7-card p-8 bg-slate-800/50 rounded-[28px]">
+                <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic">[ 壓力測試：大盤下跌 ]</h3>
+                <div id="ui-stress-grid" class="grid grid-cols-3 gap-4"></div>
             </div>
         </div>
     </div>
 
-    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-slate-900 p-8 shadow-2xl border-l border-white/10 translate-x-full transition-transform z-[9999] overflow-y-auto">
-        <div class="flex justify-between items-center mb-8 text-white border-b border-white/5 pb-4 uppercase font-black italic">
-            <h3>戰略參數設定</h3>
-            <button onclick="toggleSettings()" class="text-2xl px-4">✕</button>
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-8 shadow-2xl translate-x-full transition-transform z-[9999] overflow-y-auto">
+        <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+            <h3 class="text-xl font-black italic text-white uppercase">戰略參數設定</h3>
+            <button onclick="toggleSettings()" class="text-white text-2xl px-4">✕</button>
         </div>
+        
         <div class="space-y-6">
             <div class="bg-white/5 p-6 rounded-3xl space-y-4">
-                <p class="text-[10px] text-emerald-500 font-black">1. 基礎參數</p>
+                <p class="text-[10px] text-emerald-500 font-black">1. 核心借貸參數</p>
                 <div>
-                    <label class="text-[11px] text-slate-400 block mb-1">帳號名稱 (例如：我的質押帳戶)</label>
-                    <input id="cfg-acc-name" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold text-white outline-none">
+                    <label class="m7-label">帳號名稱 (例如: 質押主帳戶)</label>
+                    <input id="cfg-acc-name" class="m7-input">
                 </div>
                 <div>
-                    <label class="text-[11px] text-rose-400 block mb-1">券商質押總借款 (已借出金額)</label>
-                    <input type="number" id="cfg-debt" class="bg-slate-800 w-full p-4 rounded-xl text-xl font-black text-rose-400 outline-none">
+                    <label class="m7-label text-rose-400">券商質押總借款 (已借金額)</label>
+                    <input type="number" id="cfg-debt" class="m7-input text-rose-400">
                 </div>
                 <div>
-                    <label class="text-[11px] text-emerald-400 block mb-1">每月可加碼現金流 (本業薪水結餘)</label>
-                    <input type="number" id="cfg-cashflow" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold text-emerald-400 outline-none">
+                    <label class="m7-label text-emerald-500">每月可加碼現金流 (本業薪水結餘)</label>
+                    <input type="number" id="cfg-cashflow" class="m7-input text-emerald-400">
                 </div>
             </div>
 
             <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-rose-500/20">
-                <p class="text-[10px] text-rose-400 font-black">2. 信貸模組</p>
+                <p class="text-[10px] text-blue-400 font-black">2. 信貸模組</p>
                 <div>
-                    <label class="text-[11px] text-slate-500 block mb-1">信貸當初借款總額</label>
-                    <input type="number" id="cfg-loan-amount" class="bg-slate-800 w-full p-3 rounded-lg text-white outline-none">
+                    <label class="m7-label">信貸當初借款總額</label>
+                    <input type="number" id="cfg-loan-amount" class="m7-input">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[11px] text-slate-500 block mb-1">年利率 %</label>
-                        <input type="number" id="cfg-loan-rate" class="bg-slate-800 w-full p-3 rounded-lg text-white outline-none">
+                        <label class="m7-label">年利率 %</label>
+                        <input type="number" id="cfg-loan-rate" class="m7-input">
                     </div>
                     <div>
-                        <label class="text-[11px] text-slate-500 block mb-1">已繳期數 (月)</label>
-                        <input type="number" id="cfg-loan-repaid" class="bg-slate-800 w-full p-3 rounded-lg text-white outline-none">
+                        <label class="m7-label">已繳期數 (月)</label>
+                        <input type="number" id="cfg-loan-repaid" class="m7-input">
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-4 pt-4 border-t border-white/5">
                 <div class="flex justify-between items-center px-1">
-                    <label class="text-[10px] text-gray-400 font-black">3. 資產分佈 (代號 / 市值 / 目標%)</label>
-                    <button onclick="addAssetRow()" class="text-[10px] px-4 py-2 bg-emerald-500 text-white rounded-full font-black uppercase">+ 增加</button>
+                    <label class="text-[10px] text-slate-400 font-black">3. 資產配置 (代號/市值/目標%)</label>
+                    <button onclick="addAssetRow()" class="px-4 py-2 bg-emerald-500 text-white rounded-full text-[10px] font-black">+ 增加</button>
                 </div>
                 <div id="cfg-asset-rows" class="space-y-2"></div>
             </div>
-            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-500 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all text-sm uppercase">儲存並啟動戰略</button>
+
+            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-600 text-white font-black rounded-3xl uppercase tracking-widest active:scale-95 transition-all">儲存並啟動戰略</button>
         </div>
     </div>
     <script src="./script.js"></script>
