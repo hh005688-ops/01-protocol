@@ -1,15 +1,15 @@
 // 初始化資料
 let DATA = JSON.parse(localStorage.getItem('than_m7_v110')) || { 
     activeIndex: 0, 
-    accounts: [{ name: '我的帳戶', debt: 0, cashflow: 0, loanAmount: 0, loanRate: 0, loanRepaid: 0, assets: [] }] 
+    accounts: [{ name: '我的質押帳戶', debt: 0, cashflow: 0, loanAmount: 0, loanRate: 0, loanRepaid: 0, assets: [] }] 
 };
 let myChart;
 
 // 側邊欄切換
 function toggleSettings() { 
     const d = document.getElementById('settings-drawer');
-    d.classList.toggle('translate-x-full'); 
-    if (!d.classList.contains('translate-x-full')) loadSettings(); 
+    if (d) d.classList.toggle('translate-x-full'); 
+    if (d && !d.classList.contains('translate-x-full')) loadSettings(); 
 }
 
 // 載入設定數據
@@ -60,32 +60,35 @@ function saveAndRun() {
 // 核心計算引擎
 function run() {
     const acc = DATA.accounts[DATA.activeIndex];
+    if (!acc) return;
+
     const totalAsset = acc.assets.reduce((sum, a) => sum + a.val, 0);
     const netWorth = totalAsset - acc.debt;
     const totalDebt = acc.debt + (acc.loanAmount || 0);
     
     // 斜率精算
     const slope = totalDebt > 0 ? (acc.cashflow / totalDebt) * 100 : 0;
-    document.getElementById('ui-slope-info').innerText = `淨值抗跌斜率: ${slope.toFixed(4)}% / Month`;
+    const slopeEl = document.getElementById('ui-slope-info');
+    if (slopeEl) slopeEl.innerText = `淨值抗跌斜率: ${slope.toFixed(4)}% / Month`;
 
     const ratio = (acc.debt > 0 && totalAsset > 0) ? Math.round((totalAsset / acc.debt) * 100) : 0;
     const survival = ratio > 0 ? Math.round((1 - (160 / ratio)) * 100) : 0;
 
-    document.getElementById('ui-ratio').innerText = (ratio > 2000 ? '>2000' : (ratio === 0 ? '0' : ratio)) + '%';
-    document.getElementById('ui-ratio').style.color = (ratio > 0 && ratio < 180) ? 'var(--m7-red)' : 'var(--m7-green)';
-    document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalAsset).toLocaleString()}`;
-    document.getElementById('ui-survival-bar').style.width = Math.max(0, Math.min(100, survival)) + '%';
+    const ratioEl = document.getElementById('ui-ratio');
+    if (ratioEl) {
+        ratioEl.innerText = (ratio > 2000 ? '>2000' : (ratio === 0 ? '0' : ratio)) + '%';
+        ratioEl.style.color = (ratio > 0 && ratio < 180) ? 'var(--m7-red)' : 'var(--m7-green)';
+    }
 
-    // 等級與戰略建議
+    const assetEl = document.getElementById('ui-total-assets');
+    if (assetEl) assetEl.innerText = `NT$ ${Math.round(totalAsset).toLocaleString()}`;
+    
+    const barEl = document.getElementById('ui-survival-bar');
+    if (barEl) barEl.style.width = Math.max(0, Math.min(100, survival)) + '%';
+
     updateLevel(netWorth, totalAsset);
-    
-    // 更新清單
     updateTable(acc.assets, totalAsset);
-
-    // 壓力測試
     updateStressTest(acc.debt, totalAsset);
-    
-    // 圖表
     updateChart(acc.assets, totalAsset);
 }
 
@@ -107,6 +110,7 @@ function updateLevel(netWorth, totalAsset) {
 
 function updateTable(assets, totalAsset) {
     const tbody = document.getElementById('ui-asset-table');
+    if (!tbody) return;
     tbody.innerHTML = assets.length > 0 ? assets.map(a => {
         const diff = (totalAsset * (a.target / 100)) - a.val;
         return `<tr><td class="py-5 font-bold text-lg">${a.code}</td><td class="text-right text-gray-500 font-bold">${a.target}%</td><td class="text-right font-black ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Math.round(diff).toLocaleString()}</td></tr>`;
@@ -114,14 +118,18 @@ function updateTable(assets, totalAsset) {
 }
 
 function updateStressTest(debt, totalAsset) {
-    document.getElementById('ui-stress-grid').innerHTML = [10, 20, 30, 40, 50, 60].map(d => {
+    const grid = document.getElementById('ui-stress-grid');
+    if (!grid) return;
+    grid.innerHTML = [10, 20, 30, 40, 50, 60].map(d => {
         const sRatio = (debt > 0 && totalAsset > 0) ? Math.round((totalAsset * (1 - d/100) / debt) * 100) : 0;
         return `<div class="bg-white/5 p-4 rounded-2xl text-center"><p class="text-[9px] text-gray-500 font-bold mb-1">大盤下跌 ${d}%</p><p class="text-lg font-black ${sRatio > 0 && sRatio < 160 ? 'text-rose-400' : 'text-emerald-400'}">${sRatio > 0 ? sRatio + '%' : '--%'}</p></div>`;
     }).join('');
 }
 
 function updateChart(assets, total) {
-    const ctx = document.getElementById('weightChart').getContext('2d');
+    const canvas = document.getElementById('weightChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx, { 
         type: 'doughnut', 
@@ -133,7 +141,11 @@ function updateChart(assets, total) {
     });
 }
 
-function updateSwitcher() { document.getElementById('ui-acc-switcher').innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}">${acc.name || '未命名'}</option>`).join(''); }
+function updateSwitcher() { 
+    const s = document.getElementById('ui-acc-switcher');
+    if (s) s.innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}">${acc.name || '未命名'}</option>`).join(''); 
+}
 function switchAccount(idx) { DATA.activeIndex = parseInt(idx); run(); }
 
+// 確保頁面載入後才執行
 window.onload = () => { updateSwitcher(); run(); };
