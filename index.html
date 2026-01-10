@@ -3,114 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M7 戰略終端 v11.0 | Than陸仁 監製</title>
+    <title>M7 戰略終端 v11.1 | Than陸仁 監製</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
-<body class="p-4 md:p-8 pb-32">
+<body class="p-4 md:p-8 pb-32 bg-[#0F172A] text-slate-100">
     <div class="max-w-6xl mx-auto space-y-6">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-white/10">
+        <header class="flex justify-between items-center pb-6 border-b border-white/10">
             <div class="flex items-center gap-4">
-                <a href="https://www.youtube.com/@ericZang1985" target="_blank">
-                    <img src="logo.png" alt="M7" class="w-12 h-12 rounded-xl bg-white/5 p-1" onerror="this.src='https://ui-avatars.com/api/?name=Than&background=10B981&color=fff'">
-                </a>
+                <img src="./logo.png" alt="M7" class="w-12 h-12 rounded-xl bg-white/5 p-1" onerror="this.src='https://ui-avatars.com/api/?name=Than&background=10B981&color=fff'">
                 <div>
                     <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter uppercase leading-none">M7 Command Center</h1>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] mt-2 italic text-gray-500">Than陸仁 | 戰略精算 v11.0</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] mt-2 italic text-gray-500">Than陸仁 | 戰略精算 v11.1</p>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <select id="ui-acc-switcher" onchange="switchAccount(this.value)" class="bg-white/5 border border-white/10 p-3 rounded-2xl text-sm font-bold outline-none cursor-pointer"></select>
-                <button id="gear-btn" onclick="toggleSettings()" class="w-11 h-11 m7-card border-emerald-500/50 border flex items-center justify-center text-xl hover:bg-emerald-500/10 transition-all">⚙️</button>
-            </div>
+            <button id="gear-btn" onclick="toggleSettings()" class="w-11 h-11 bg-slate-800 border border-emerald-500/50 rounded-2xl flex items-center justify-center text-xl">⚙️</button>
         </header>
 
-        <div class="m7-card p-8 border-t-4 border-emerald-500 relative">
+        <div class="m7-card p-8 border-t-4 border-emerald-500 bg-slate-800/50 rounded-[28px]">
             <div class="flex justify-between items-end mb-4">
-                <div>
-                    <p id="ui-lv-tag" class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em] mb-1">Level 1</p>
-                    <h2 id="ui-lv-name" class="text-3xl font-black italic tracking-tighter text-white uppercase">等待參數輸入</h2>
-                </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-bold text-gray-500 uppercase">Strategic EXP</p>
-                    <p id="ui-exp-percent" class="text-xl font-black text-emerald-400 italic">0%</p>
-                </div>
+                <h2 id="ui-lv-name" class="text-3xl font-black italic uppercase">等待設定中</h2>
+                <p id="ui-exp-percent" class="text-xl font-black text-emerald-400">0%</p>
             </div>
-            <div class="w-full h-4 bg-white/5 rounded-full p-1 overflow-hidden">
-                <div id="ui-exp-bar" class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
+            <div class="w-full h-4 bg-white/5 rounded-full overflow-hidden">
+                <div id="ui-exp-bar" class="h-full bg-emerald-500" style="width: 0%"></div>
             </div>
-            <div class="flex justify-between mt-2">
-                <div id="ui-lv-advice" class="text-[11px] font-bold text-gray-400 italic tracking-wide uppercase">[ 戰略建議 ] 正在分析...</div>
-                <div class="text-[10px] font-black text-gray-600 uppercase tracking-widest">Final Goal: 10M NTD</div>
-            </div>
+            <p id="ui-slope-info" class="mt-4 text-[10px] text-emerald-500/60 font-bold uppercase">淨值抗跌斜率: 0.0000%</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="m7-card p-10 md:col-span-2 text-center flex flex-col justify-center">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 italic">Core Maintenance Ratio</p>
-                <div id="ui-ratio" class="text-6xl md:text-9xl font-black tracking-tighter text-emerald-400 privacy-mask">0%</div>
-                <p id="ui-slope-info" class="mt-4 text-[10px] text-emerald-500/60 font-bold uppercase tracking-widest">請點擊 ⚙️ 輸入數據</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="m7-card p-10 bg-slate-800/50 rounded-[28px] text-center">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Maintenance Ratio</p>
+                <div id="ui-ratio" class="text-7xl font-black text-emerald-400">0%</div>
             </div>
-            <div class="m7-card p-8 flex flex-col items-center justify-center relative">
+            <div class="m7-card p-8 bg-slate-800/50 rounded-[28px] flex flex-col items-center">
                 <canvas id="weightChart"></canvas>
-                <div id="ui-total-assets" class="mt-6 text-xl font-black privacy-mask text-emerald-400 text-center">NT$ 0</div>
-                <p class="text-[10px] text-gray-600 uppercase font-bold tracking-widest">Total Asset Market Value</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="m7-card p-8 text-center">
-                <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
-                    <span class="w-1 h-4 bg-emerald-500 rounded-full"></span> 再平衡戰略指令
-                </h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm font-bold italic">
-                        <thead class="text-gray-600 text-[10px] uppercase border-b border-white/5">
-                            <tr><th class="pb-4">標的</th><th class="pb-4 text-right">目標 %</th><th class="pb-4 text-right">操作 (NT$)</th></tr>
-                        </thead>
-                        <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="m7-card p-8 text-center">
-                <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
-                    <span class="w-1 h-4 bg-rose-500 rounded-full"></span> 壓力測試：[大盤下跌模擬]
-                </h3>
-                <div id="ui-stress-grid" class="grid grid-cols-3 gap-4"></div>
+                <div id="ui-total-assets" class="mt-6 text-xl font-black text-emerald-400">NT$ 0</div>
             </div>
         </div>
     </div>
 
-    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-slate-900 p-8 shadow-2xl border-l border-white/10 translate-x-full overflow-y-auto">
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-slate-900 p-8 shadow-2xl border-l border-white/10 translate-x-full transition-transform z-[9999] overflow-y-auto">
         <div class="flex justify-between items-center mb-8 text-white border-b border-white/5 pb-4 uppercase font-black italic">
             <h3>戰略參數設定</h3>
             <button onclick="toggleSettings()" class="text-2xl px-4">✕</button>
         </div>
-        <div id="settings-content" class="space-y-6">
+        <div class="space-y-6">
             <div class="bg-white/5 p-6 rounded-3xl space-y-4">
-                <p class="text-[10px] text-emerald-500 font-black uppercase tracking-widest">1. 基礎參數</p>
-                <input id="cfg-acc-name" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold outline-none border border-white/5" placeholder="帳號名稱">
-                <input type="number" id="cfg-debt" class="bg-slate-800 w-full p-4 rounded-xl text-xl font-black text-rose-400 outline-none" placeholder="券商質押金額">
-                <input type="number" id="cfg-cashflow" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold text-emerald-400 outline-none" placeholder="每月加碼現金流">
+                <p class="text-[10px] text-emerald-500 font-black">1. 基礎參數</p>
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">帳號名稱 (例如：我的質押帳戶)</label>
+                    <input id="cfg-acc-name" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[11px] text-rose-400 block mb-1">券商質押總借款 (已借出金額)</label>
+                    <input type="number" id="cfg-debt" class="bg-slate-800 w-full p-4 rounded-xl text-xl font-black text-rose-400 outline-none">
+                </div>
+                <div>
+                    <label class="text-[11px] text-emerald-400 block mb-1">每月可加碼現金流 (本業薪水結餘)</label>
+                    <input type="number" id="cfg-cashflow" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold text-emerald-400 outline-none">
+                </div>
             </div>
-            <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-rose-500/20 text-xs text-center">
-                <p class="text-[10px] text-rose-400 font-black uppercase tracking-widest">2. 信貸模組</p>
-                <input type="number" id="cfg-loan-amount" class="bg-slate-800 w-full p-3 rounded-lg outline-none" placeholder="信貸總額">
-                <input type="number" id="cfg-loan-rate" class="bg-slate-800 w-full p-3 rounded-lg outline-none" placeholder="利率 %">
-                <input type="number" id="cfg-loan-repaid" class="bg-slate-800 w-full p-3 rounded-lg outline-none" placeholder="已繳期數">
+
+            <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-rose-500/20">
+                <p class="text-[10px] text-rose-400 font-black">2. 信貸模組</p>
+                <div>
+                    <label class="text-[11px] text-slate-500 block mb-1">信貸當初借款總額</label>
+                    <input type="number" id="cfg-loan-amount" class="bg-slate-800 w-full p-3 rounded-lg text-white outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[11px] text-slate-500 block mb-1">年利率 %</label>
+                        <input type="number" id="cfg-loan-rate" class="bg-slate-800 w-full p-3 rounded-lg text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-500 block mb-1">已繳期數 (月)</label>
+                        <input type="number" id="cfg-loan-repaid" class="bg-slate-800 w-full p-3 rounded-lg text-white outline-none">
+                    </div>
+                </div>
             </div>
+
             <div class="space-y-4">
                 <div class="flex justify-between items-center px-1">
-                    <label class="text-[10px] text-gray-400 font-black uppercase">3. 資產分佈</label>
-                    <button onclick="addAssetRow()" class="text-[10px] px-4 py-2 bg-emerald-500 text-white rounded-full font-black uppercase shadow-lg">+ 增加</button>
+                    <label class="text-[10px] text-gray-400 font-black">3. 資產分佈 (代號 / 市值 / 目標%)</label>
+                    <button onclick="addAssetRow()" class="text-[10px] px-4 py-2 bg-emerald-500 text-white rounded-full font-black uppercase">+ 增加</button>
                 </div>
                 <div id="cfg-asset-rows" class="space-y-2"></div>
             </div>
-            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-500 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest">儲存並啟動</button>
+            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-500 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all text-sm uppercase">儲存並啟動戰略</button>
         </div>
     </div>
-
-    <script src="script.js"></script>
+    <script src="./script.js"></script>
 </body>
 </html>
