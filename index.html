@@ -22,7 +22,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <select id="ui-acc-switcher" onchange="switchAccount(this.value)" class="bg-white/5 border border-white/10 p-3 rounded-2xl text-sm font-bold outline-none cursor-pointer"></select>
-                <button onclick="toggleSettings()" class="w-11 h-11 m7-card border-emerald-500/50 border flex items-center justify-center text-xl hover:bg-emerald-500/10 transition-all">⚙️</button>
+                <button id="gear-btn" onclick="toggleSettings()" class="w-11 h-11 m7-card border-emerald-500/50 border flex items-center justify-center text-xl hover:bg-emerald-500/10 transition-all">⚙️</button>
             </div>
         </header>
 
@@ -54,13 +54,13 @@
             </div>
             <div class="m7-card p-8 flex flex-col items-center justify-center relative">
                 <canvas id="weightChart"></canvas>
-                <div id="ui-total-assets" class="mt-6 text-xl font-black privacy-mask text-emerald-400">NT$ 0</div>
+                <div id="ui-total-assets" class="mt-6 text-xl font-black privacy-mask text-emerald-400 text-center">NT$ 0</div>
                 <p class="text-[10px] text-gray-600 uppercase font-bold tracking-widest">Total Asset Market Value</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="m7-card p-8">
+            <div class="m7-card p-8 text-center">
                 <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
                     <span class="w-1 h-4 bg-emerald-500 rounded-full"></span> 再平衡戰略指令
                 </h3>
@@ -73,7 +73,7 @@
                     </table>
                 </div>
             </div>
-            <div class="m7-card p-8">
+            <div class="m7-card p-8 text-center">
                 <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
                     <span class="w-1 h-4 bg-rose-500 rounded-full"></span> 壓力測試：[大盤下跌模擬]
                 </h3>
@@ -94,7 +94,7 @@
                 <input type="number" id="cfg-debt" class="bg-slate-800 w-full p-4 rounded-xl text-xl font-black text-rose-400 outline-none" placeholder="券商質押金額">
                 <input type="number" id="cfg-cashflow" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold text-emerald-400 outline-none" placeholder="每月加碼現金流">
             </div>
-            <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-rose-500/20 text-xs">
+            <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-rose-500/20 text-xs text-center">
                 <p class="text-[10px] text-rose-400 font-black uppercase tracking-widest">2. 信貸模組</p>
                 <input type="number" id="cfg-loan-amount" class="bg-slate-800 w-full p-3 rounded-lg outline-none" placeholder="信貸總額">
                 <input type="number" id="cfg-loan-rate" class="bg-slate-800 w-full p-3 rounded-lg outline-none" placeholder="利率 %">
@@ -103,7 +103,7 @@
             <div class="space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <label class="text-[10px] text-gray-400 font-black uppercase">3. 資產分佈</label>
-                    <button onclick="addAssetRow()" class="text-[10px] px-4 py-2 bg-emerald-500 text-white rounded-full font-black uppercase">+ 增加</button>
+                    <button onclick="addAssetRow()" class="text-[10px] px-4 py-2 bg-emerald-500 text-white rounded-full font-black uppercase shadow-lg">+ 增加</button>
                 </div>
                 <div id="cfg-asset-rows" class="space-y-2"></div>
             </div>
