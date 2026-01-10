@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M7 戰略終端 v10.9 | Than陸仁 監製</title>
+    <title>M7 戰略終端 v11.0 | Than陸仁 監製</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -13,8 +13,6 @@
         .privacy-mask { transition: filter 0.3s; }
         body.privacy-on .privacy-mask { filter: blur(15px); }
         #settings-drawer { z-index: 5000; transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
-        .yt-link { animation: glow 2s infinite; }
-        @keyframes glow { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; color: #10B981; } }
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     </style>
 </head>
@@ -28,7 +26,7 @@
                 </a>
                 <div>
                     <h1 class="text-3xl font-black italic text-emerald-400 tracking-tighter uppercase leading-none">M7 Command Center</h1>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] mt-2 italic text-gray-500">Than陸仁 | 專業級槓桿精算終端</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] mt-2 italic text-gray-500">Than陸仁 | 戰略精算 v11.0</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -41,7 +39,7 @@
             <div class="flex justify-between items-end mb-4">
                 <div>
                     <p id="ui-lv-tag" class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em] mb-1">Level 1</p>
-                    <h2 id="ui-lv-name" class="text-3xl font-black italic tracking-tighter text-white uppercase">系統掃描中</h2>
+                    <h2 id="ui-lv-name" class="text-3xl font-black italic tracking-tighter text-white uppercase">等待參數輸入</h2>
                 </div>
                 <div class="text-right">
                     <p class="text-[10px] font-bold text-gray-500 uppercase">Strategic EXP</p>
@@ -52,7 +50,7 @@
                 <div id="ui-exp-bar" class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
             </div>
             <div class="flex justify-between mt-2">
-                <div id="ui-lv-advice" class="text-[11px] font-bold text-gray-400 italic tracking-wide uppercase">正在生成建議...</div>
+                <div id="ui-lv-advice" class="text-[11px] font-bold text-gray-400 italic tracking-wide uppercase">[ 戰略建議 ] 正在分析帳戶結構...</div>
                 <div class="text-[10px] font-black text-gray-600 uppercase tracking-widest">Final Goal: 10,000,000 NTD</div>
             </div>
         </div>
@@ -61,12 +59,12 @@
             <div class="m7-card p-10 md:col-span-2 text-center flex flex-col justify-center">
                 <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 italic">Core Maintenance Ratio</p>
                 <div id="ui-ratio" class="text-6xl md:text-9xl font-black tracking-tighter text-emerald-400 privacy-mask">0%</div>
-                <p id="ui-slope-info" class="mt-4 text-[10px] text-emerald-500/60 font-bold uppercase tracking-widest cursor-help" title="斜率計算：每月現金流 / 總負債 = 淨值抗跌斜率">斜率計算載入中...</p>
+                <p id="ui-slope-info" class="mt-4 text-[10px] text-emerald-500/60 font-bold uppercase tracking-widest cursor-help">請點擊 ⚙️ 輸入數據以計算斜率</p>
             </div>
             <div class="m7-card p-8 flex flex-col items-center justify-center relative">
                 <canvas id="weightChart"></canvas>
-                <div class="absolute inset-0 flex flex-col items-center justify-center pt-8 pointer-events-none">
-                     <p id="chart-center-text" class="text-[10px] text-gray-500 font-bold uppercase">資產分佈</p>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pt-8 pointer-events-none text-center">
+                     <p id="chart-center-text" class="text-[10px] text-gray-500 font-bold uppercase">資產目前幾%</p>
                 </div>
                 <div id="ui-total-assets" class="mt-6 text-xl font-black privacy-mask text-emerald-400">NT$ 0</div>
                 <p class="text-[10px] text-gray-600 uppercase font-bold tracking-widest">Total Asset Market Value</p>
@@ -98,44 +96,59 @@
 
     <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-slate-900 p-8 shadow-2xl border-l border-white/10 translate-x-full overflow-y-auto">
         <div class="flex justify-between items-center mb-8 text-white border-b border-white/5 pb-4">
-            <h3 class="text-2xl font-black italic tracking-tighter uppercase">Strategic Setup</h3>
+            <h3 class="text-2xl font-black italic tracking-tighter uppercase">戰略參數設定</h3>
             <button onclick="toggleSettings()" class="text-2xl px-4">✕</button>
         </div>
         <div class="space-y-6">
             <div class="bg-white/5 p-6 rounded-3xl space-y-4">
-                <p class="text-[10px] text-emerald-500 font-black uppercase tracking-widest">基礎參數</p>
-                <input id="cfg-acc-name" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold outline-none border border-white/5" placeholder="帳號名稱">
+                <p class="text-[10px] text-emerald-500 font-black uppercase tracking-widest">1. 基礎參數 (質押與現金流)</p>
                 <div>
-                    <label class="text-[9px] text-gray-500 font-bold block mb-1 uppercase">券商質押借款 (NT$)</label>
+                    <label class="text-[9px] text-gray-400 font-bold block mb-1 uppercase">帳號名稱 (例如: 質押主戰場)</label>
+                    <input id="cfg-acc-name" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold outline-none border border-white/5">
+                </div>
+                <div>
+                    <label class="text-[9px] text-rose-400 font-bold block mb-1 uppercase">券商質押借款金額 (借了多少錢)</label>
                     <input type="number" id="cfg-debt" class="bg-slate-800 w-full p-4 rounded-xl text-xl font-black text-rose-400 outline-none border border-white/5" placeholder="0">
                 </div>
                 <div>
-                    <label class="text-[9px] text-emerald-500 font-bold block mb-1 uppercase">每月可投入現金流 (NT$)</label>
+                    <label class="text-[9px] text-emerald-500 font-bold block mb-1 uppercase">每月可加碼現金流 (薪水餘額)</label>
                     <input type="number" id="cfg-cashflow" class="bg-slate-800 w-full p-4 rounded-xl text-sm font-bold text-emerald-400 outline-none border border-white/5" placeholder="0">
                 </div>
             </div>
 
             <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-rose-500/20">
-                <p class="text-[10px] text-rose-400 font-black uppercase tracking-widest">信貸模組 (精算斜率用)</p>
+                <p class="text-[10px] text-rose-400 font-black uppercase tracking-widest">2. 信貸模組 (計算真實斜率)</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="number" id="cfg-loan-amount" class="bg-slate-800 p-4 rounded-xl text-xs font-bold outline-none" placeholder="信貸總額">
-                    <input type="number" id="cfg-loan-rate" class="bg-slate-800 p-4 rounded-xl text-xs font-bold outline-none" placeholder="利率 %">
+                    <div>
+                        <label class="text-[9px] text-gray-500 font-bold block mb-1 uppercase">信貸當初借款總額</label>
+                        <input type="number" id="cfg-loan-amount" class="bg-slate-800 w-full p-4 rounded-xl text-xs font-bold outline-none" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="text-[9px] text-gray-500 font-bold block mb-1 uppercase">信貸年利率 %</label>
+                        <input type="number" id="cfg-loan-rate" class="bg-slate-800 w-full p-4 rounded-xl text-xs font-bold outline-none" placeholder="0.0">
+                    </div>
                 </div>
-                <input type="number" id="cfg-loan-repaid" class="bg-slate-800 w-full p-4 rounded-xl text-xs font-bold outline-none" placeholder="已償還期數">
+                <div>
+                    <label class="text-[9px] text-gray-500 font-bold block mb-1 uppercase">已繳款期數 (幾個月)</label>
+                    <input type="number" id="cfg-loan-repaid" class="bg-slate-800 w-full p-4 rounded-xl text-xs font-bold outline-none" placeholder="0">
+                </div>
             </div>
 
             <div class="space-y-4">
-                <div class="flex justify-between items-center px-1"><label class="text-xs text-gray-400 font-bold uppercase italic tracking-widest">資產配置比重</label><button onclick="addAssetRow()" class="text-[10px] px-5 py-2 bg-emerald-500 text-white rounded-full font-black uppercase">+ ADD ASSET</button></div>
+                <div class="flex justify-between items-center px-1">
+                    <label class="text-xs text-gray-400 font-bold uppercase italic tracking-widest">3. 資產分佈 (輸入代號、市值、目標%)</label>
+                    <button onclick="addAssetRow()" class="text-[10px] px-5 py-2 bg-emerald-500 text-white rounded-full font-black uppercase shadow-lg">+ 增加資產</button>
+                </div>
                 <div id="cfg-asset-rows" class="space-y-2"></div>
             </div>
-            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-500 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest">Save & Execute</button>
+            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-500 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest">儲存並啟動戰略終端</button>
         </div>
     </div>
 
     <script>
-        let DATA = JSON.parse(localStorage.getItem('than_m7_v109')) || { 
+        let DATA = JSON.parse(localStorage.getItem('than_m7_v110')) || { 
             activeIndex: 0, 
-            accounts: [{ name: '質押核心戶', debt: 0, cashflow: 0, loanAmount: 0, loanRate: 0, loanRepaid: 0, assets: [] }] 
+            accounts: [{ name: '我的質押帳戶', debt: 0, cashflow: 0, loanAmount: 0, loanRate: 0, loanRepaid: 0, assets: [] }] 
         };
         let myChart;
 
@@ -161,7 +174,11 @@
         function addAssetRow(code='', val='', target='') {
             const div = document.createElement('div');
             div.className = "bg-white/5 p-3 rounded-xl flex gap-2 items-center";
-            div.innerHTML = `<input type="text" placeholder="代號" class="flex-1 bg-slate-800 p-2 rounded-lg text-xs cfg-a-code font-bold outline-none" value="${code}"><input type="number" placeholder="市值" class="w-[30%] bg-slate-800 p-2 rounded-lg text-xs cfg-a-val font-bold outline-none" value="${val}"><input type="number" placeholder="%" class="w-[20%] bg-slate-800 p-2 rounded-lg text-xs cfg-a-target font-bold outline-none" value="${target}"><button onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-1">✕</button>`;
+            div.innerHTML = `
+                <input type="text" placeholder="代號" class="flex-1 bg-slate-800 p-2 rounded-lg text-xs cfg-a-code font-bold outline-none" value="${code}">
+                <input type="number" placeholder="目前市值" class="w-[30%] bg-slate-800 p-2 rounded-lg text-xs cfg-a-val font-bold outline-none" value="${val}">
+                <input type="number" placeholder="目標%" class="w-[20%] bg-slate-800 p-2 rounded-lg text-xs cfg-a-target font-bold outline-none" value="${target}">
+                <button onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-1 text-lg">✕</button>`;
             document.getElementById('cfg-asset-rows').appendChild(div);
         }
 
@@ -178,7 +195,7 @@
             acc.assets = [];
             codes.forEach((c, i) => { if (c.value) acc.assets.push({ code: c.value, val: parseFloat(vals[i].value) || 0, target: parseFloat(targets[i].value) || 0 }); });
             
-            localStorage.setItem('than_m7_v109', JSON.stringify(DATA));
+            localStorage.setItem('than_m7_v110', JSON.stringify(DATA));
             document.getElementById('settings-drawer').classList.add('translate-x-full');
             run();
         }
@@ -189,9 +206,9 @@
             const netWorth = totalAsset - acc.debt;
             const totalDebt = acc.debt + (acc.loanAmount || 0);
             
-            // 📈 斜率計算 Slope = 每月現金流 / 總負債 (顯示為抗跌%成長)
+            // 📈 斜率透明化
             const slope = totalDebt > 0 ? (acc.cashflow / totalDebt) * 100 : 0;
-            document.getElementById('ui-slope-info').innerText = `淨值抗跌斜率: ${slope.toFixed(3)}% / Month (計算: 現金流/總負債)`;
+            document.getElementById('ui-slope-info').innerText = `淨值抗跌斜率: ${slope.toFixed(4)}% / Month (每個月勞力換取的防禦力)`;
 
             const ratio = (acc.debt > 0 && totalAsset > 0) ? Math.round((totalAsset / acc.debt) * 100) : 0;
             const survival = ratio > 0 ? Math.round((1 - (160 / ratio)) * 100) : 0;
@@ -202,11 +219,11 @@
             document.getElementById('ui-survival-bar').style.width = Math.max(0, Math.min(100, survival)) + '%';
 
             // 🏆 Level & Advice
-            let lv = 1, name = "核心擴張階段", exp = 0, advice = "建議：維持 2.5x 槓桿，利用現金流持續注入。";
+            let lv = 1, name = "核心擴張階段", exp = 0, advice = "[ 戰略建議 ] 維持 2.5x 槓桿加速複利。";
             if (netWorth >= 10000000) {
-                lv = 3; name = "終極收割階段"; exp = 100; advice = "建議：槓桿降至 1.5x 以下。老樹精已成型，轉為守勢。";
+                lv = 3; name = "終極收割階段"; exp = 100; advice = "[ 戰略建議 ] 槓桿降至 1.5x。萬年老樹精已成型，坐看雲起時。";
             } else if (netWorth >= 5000000) {
-                lv = 2; name = "戰略穩固階段"; exp = Math.round(((netWorth - 5000000) / 5000000) * 100); advice = "建議：槓桿降至 2.0x。斜率穩定，注意除息回撤。";
+                lv = 2; name = "戰略穩固階段"; exp = Math.round(((netWorth - 5000000) / 5000000) * 100); advice = "[ 戰略建議 ] 槓桿降至 2.0x。斜率穩定，無視市場噪音。";
             } else {
                 exp = Math.round((Math.max(0, netWorth) / 5000000) * 100);
             }
@@ -216,13 +233,14 @@
             document.getElementById('ui-exp-bar').style.width = `${exp}%`;
             document.getElementById('ui-lv-advice').innerText = advice;
 
-            // ⚖️ Table & Stress Test
+            // ⚖️ 再平衡指令
             const tbody = document.getElementById('ui-asset-table');
-            tbody.innerHTML = acc.assets.map(a => {
+            tbody.innerHTML = acc.assets.length > 0 ? acc.assets.map(a => {
                 const diff = (totalAsset * (a.target / 100)) - a.val;
                 return `<tr><td class="py-5 font-bold text-lg">${a.code}</td><td class="text-right text-gray-500 font-bold">${a.target}%</td><td class="text-right font-black ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Math.round(diff).toLocaleString()}</td></tr>`;
-            }).join('');
+            }).join('') : '<tr><td colspan="3" class="py-10 text-center text-gray-500 italic">請輸入資產數據</td></tr>';
 
+            // 🔥 壓力測試：大盤下跌
             document.getElementById('ui-stress-grid').innerHTML = [10, 20, 30, 40, 50, 60].map(d => {
                 const sRatio = (acc.debt > 0 && totalAsset > 0) ? Math.round((totalAsset * (1 - d/100) / acc.debt) * 100) : 0;
                 return `<div class="bg-white/5 p-4 rounded-2xl text-center"><p class="text-[9px] text-gray-500 font-bold mb-1">大盤下跌 ${d}%</p><p class="text-lg font-black ${sRatio > 0 && sRatio < 160 ? 'text-rose-400' : 'text-emerald-400'}">${sRatio > 0 ? sRatio + '%' : '--%'}</p></div>`;
@@ -237,14 +255,14 @@
             myChart = new Chart(ctx, { 
                 type: 'doughnut', 
                 data: { 
-                    labels: assets.map(a => `${a.code} (${Math.round(a.val/total*100)}%)`), 
+                    labels: assets.map(a => `${a.code} (${Math.round(a.val/(total||1)*100)}%)`), 
                     datasets: [{ data: assets.map(a => a.val), backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#F43F5E', '#8B5CF6'], borderWidth: 0 }] 
                 }, 
                 options: { plugins: { legend: { display: false } }, cutout: '82%' } 
             });
         }
         window.onload = () => { updateSwitcher(); run(); };
-        function updateSwitcher() { document.getElementById('ui-acc-switcher').innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}">${acc.name}</option>`).join(''); }
+        function updateSwitcher() { document.getElementById('ui-acc-switcher').innerHTML = DATA.accounts.map((acc, i) => `<option value="${i}">${acc.name || '未命名'}</option>`).join(''); }
         function switchAccount(idx) { DATA.activeIndex = parseInt(idx); run(); }
     </script>
 </body>
