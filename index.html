@@ -2,232 +2,404 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M7 戰略終端 v11.1 | Than陸仁 監製</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業資產配置與質押管理系統</title>
+    <!-- React & Tailwind CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --m7-green: #10B981; --m7-red: #F43F5E; --m7-dark: #0F172A; }
-        body { background-color: var(--m7-dark); color: #F1F5F9; font-family: system-ui, sans-serif; overflow-x: hidden; }
-        .m7-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; backdrop-filter: blur(12px); }
-        .m7-label { font-size: 11px; font-weight: 800; color: #94a3b8; margin-bottom: 4px; display: block; text-transform: uppercase; }
-        .m7-input { background: #1e293b; width: 100%; padding: 12px; border-radius: 12px; font-weight: 700; outline: none; border: 1px solid rgba(255,255,255,0.1); color: white; }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #f43f5e;
+        }
+
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background-color: var(--bg-main);
+            color: #f1f5f9;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* 自定義捲軸 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
     </style>
 </head>
-<body class="p-4 md:p-8 pb-32">
-    <div class="max-w-6xl mx-auto space-y-6">
-        <header class="flex justify-between items-center pb-6 border-b border-white/10">
-            <div class="flex items-center gap-4">
-                <img src="./logo.png" alt="M7" class="w-12 h-12 rounded-xl" onerror="this.src='https://ui-avatars.com/api/?name=Than&background=10B981&color=fff'">
-                <div>
-                    <h1 class="text-2xl font-black italic text-emerald-400">M7 COMMAND CENTER</h1>
-                    <p class="text-[10px] font-bold text-gray-500 italic">THAN陸仁 | 戰略精算 V11.1</p>
-                </div>
-            </div>
-            <button onclick="toggleSettings()" class="w-11 h-11 bg-slate-800 border border-emerald-500/50 rounded-2xl flex items-center justify-center text-xl hover:bg-emerald-500/10 transition-all">⚙️</button>
-        </header>
+<body>
+    <div id="root"></div>
 
-        <div class="m7-card p-8 border-t-4 border-emerald-500">
-            <div class="flex justify-between items-end mb-4">
-                <div>
-                    <p id="ui-lv-tag" class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em]">LEVEL 1</p>
-                    <h2 id="ui-lv-name" class="text-3xl font-black italic tracking-tighter uppercase">等待設定中</h2>
-                </div>
-                <p id="ui-exp-percent" class="text-xl font-black text-emerald-400 italic">0%</p>
-            </div>
-            <div class="w-full h-4 bg-white/5 rounded-full p-1 overflow-hidden">
-                <div id="ui-exp-bar" class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
-            </div>
-            <div id="ui-slope-info" class="mt-4 text-[11px] font-bold text-emerald-500/60 italic uppercase">淨值抗跌斜率: 0.0000% / MONTH</div>
-        </div>
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="m7-card p-10 md:col-span-2 text-center flex flex-col justify-center min-h-[300px]">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 italic">Maintenance Ratio</p>
-                <div id="ui-ratio" class="text-7xl md:text-9xl font-black tracking-tighter text-emerald-400">0%</div>
-            </div>
-            <div class="m7-card p-8 flex flex-col items-center justify-center min-h-[300px]">
-                <div style="width: 200px; height: 200px; position: relative;">
-                    <canvas id="weightChart"></canvas>
-                </div>
-                <div id="ui-total-assets" class="mt-6 text-xl font-black text-emerald-400">NT$ 0</div>
-                <p class="text-[10px] text-gray-600 uppercase font-bold">TOTAL MARKET VALUE</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="m7-card p-8">
-                <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
-                    <span class="w-1 h-4 bg-emerald-500 rounded-full"></span> 再平衡戰略指令
-                </h3>
-                <table class="w-full text-left text-sm font-bold italic">
-                    <thead class="text-gray-600 text-[10px] uppercase border-b border-white/5">
-                        <tr><th class="pb-4">標的</th><th class="pb-4 text-right">目標 %</th><th class="pb-4 text-right">操作 (NT$)</th></tr>
-                    </thead>
-                    <tbody id="ui-asset-table" class="divide-y divide-white/5"></tbody>
-                </table>
-            </div>
-            <div class="m7-card p-8">
-                <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest italic flex items-center gap-2">
-                    <span class="w-1 h-4 bg-rose-500 rounded-full"></span> 壓力測試：大盤下跌
-                </h3>
-                <div id="ui-stress-grid" class="grid grid-cols-3 gap-4"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-slate-900 p-8 shadow-2xl translate-x-full transition-transform z-[9999] overflow-y-auto">
-        <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
-            <h3 class="text-xl font-black italic text-white">戰略參數設定</h3>
-            <button onclick="toggleSettings()" class="text-white text-2xl px-4">✕</button>
-        </div>
-        <div class="space-y-6">
-            <div class="bg-white/5 p-6 rounded-3xl space-y-4">
-                <div>
-                    <label class="m7-label">帳號名稱</label>
-                    <input id="cfg-acc-name" class="m7-input">
-                </div>
-                <div>
-                    <label class="m7-label text-rose-400">券商質押總借款 (已借金額)</label>
-                    <input type="number" id="cfg-debt" class="m7-input text-rose-400 text-lg">
-                </div>
-                <div>
-                    <label class="m7-label text-emerald-500">每月可加碼現金流</label>
-                    <input type="number" id="cfg-cashflow" class="m7-input text-emerald-400">
-                </div>
-            </div>
-            <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-rose-500/20">
-                <label class="m7-label text-center">信貸模組 (總額/利率/期數)</label>
-                <input type="number" id="cfg-loan-amount" class="m7-input" placeholder="總額">
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="number" id="cfg-loan-rate" class="m7-input" placeholder="利率%">
-                    <input type="number" id="cfg-loan-repaid" class="m7-input" placeholder="已繳期">
-                </div>
-            </div>
-            <div class="space-y-4 pt-4 border-t border-white/5">
-                <div class="flex justify-between items-center px-1">
-                    <label class="m7-label">資產分佈 (代號/市值/目標%)</label>
-                    <button onclick="addAssetRow()" class="px-4 py-1 bg-emerald-500 text-white rounded-full text-[10px] font-black">+ 增加</button>
-                </div>
-                <div id="cfg-asset-rows" class="space-y-2"></div>
-            </div>
-            <button onclick="saveAndRun()" class="w-full py-6 bg-emerald-600 text-white font-black rounded-3xl uppercase tracking-widest shadow-xl">儲存並啟動戰略</button>
-        </div>
-    </div>
-
-    <script>
-        // 大腦邏輯直接整合
-        let DATA = JSON.parse(localStorage.getItem('than_m7_v111_final')) || { 
-            activeIndex: 0, 
-            accounts: [{ name: '我的質押帳戶', debt: 0, cashflow: 0, loanAmount: 0, loanRate: 0, loanRepaid: 0, assets: [] }] 
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
-        let myChart;
 
-        function toggleSettings() { 
-            const d = document.getElementById('settings-drawer');
-            d.classList.toggle('translate-x-full'); 
-            if (!d.classList.contains('translate-x-full')) loadSettings(); 
-        }
+        const App = () => {
+            const [exchangeRate, setExchangeRate] = useState(31.62);
+            const [activeTab, setActiveTab] = useState('tw-market');
 
-        function loadSettings() {
-            const acc = DATA.accounts[DATA.activeIndex];
-            document.getElementById('cfg-acc-name').value = acc.name || '';
-            document.getElementById('cfg-debt').value = acc.debt || 0;
-            document.getElementById('cfg-cashflow').value = acc.cashflow || 0;
-            document.getElementById('cfg-loan-amount').value = acc.loanAmount || 0;
-            document.getElementById('cfg-loan-rate').value = acc.loanRate || 0;
-            document.getElementById('cfg-loan-repaid').value = acc.loanRepaid || 0;
-            const container = document.getElementById('cfg-asset-rows');
-            container.innerHTML = '';
-            if (acc.assets) acc.assets.forEach(a => addAssetRow(a.code, a.val, a.target));
-        }
+            // 台股資產
+            const [twAssets, setTwAssets] = useState([
+                { id: 'tw1', code: '00675L', name: '富邦台灣加權正2', price: 169.8, shares: 6000, targetPct: 70 },
+                { id: 'tw2', code: '00926', name: 'KGI全球產業精英55', price: 23.8, shares: 8000, targetPct: 15 },
+                { id: 'tw3', code: '00965', name: '元大全球航太國防', price: 25.88, shares: 6000, targetPct: 15 },
+            ]);
+            const [twNewCapital, setTwNewCapital] = useState(0);
+            const [twLoanAmount, setTwLoanAmount] = useState(130000);
 
-        function addAssetRow(code='', val='', target='') {
-            const div = document.createElement('div');
-            div.className = "flex gap-2 items-center bg-white/5 p-2 rounded-xl";
-            div.innerHTML = `
-                <input type="text" placeholder="代號" class="flex-1 bg-slate-800 p-2 rounded-lg text-xs cfg-a-code font-bold outline-none border border-white/5" value="${code}">
-                <input type="number" placeholder="市值" class="w-[30%] bg-slate-800 p-2 rounded-lg text-xs cfg-a-val font-bold outline-none" value="${val}">
-                <input type="number" placeholder="%" class="w-[20%] bg-slate-800 p-2 rounded-lg text-xs cfg-a-target font-bold outline-none" value="${target}">
-                <button onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2">✕</button>`;
-            document.getElementById('cfg-asset-rows').appendChild(div);
-        }
+            // 美股資產
+            const [usAssets, setUsAssets] = useState([
+                { id: 'us1', code: 'QQQM', name: 'Invesco NASDAQ 100', price: 255.71, shares: 49, targetPct: 60 },
+                { id: 'us2', code: 'SMH', name: 'VanEck半導體ETF', price: 400.39, shares: 22, targetPct: 40 },
+            ]);
+            const [usNewCapital, setUsNewCapital] = useState(0);
 
-        function saveAndRun() {
-            const acc = DATA.accounts[DATA.activeIndex];
-            acc.name = document.getElementById('cfg-acc-name').value || '未命名';
-            acc.debt = parseFloat(document.getElementById('cfg-debt').value) || 0;
-            acc.cashflow = parseFloat(document.getElementById('cfg-cashflow').value) || 0;
-            acc.loanAmount = parseFloat(document.getElementById('cfg-loan-amount').value) || 0;
-            acc.loanRate = parseFloat(document.getElementById('cfg-loan-rate').value) || 0;
-            acc.loanRepaid = parseFloat(document.getElementById('cfg-loan-repaid').value) || 0;
-            
-            const codes = document.querySelectorAll('.cfg-a-code'), vals = document.querySelectorAll('.cfg-a-val'), targets = document.querySelectorAll('.cfg-a-target');
-            acc.assets = [];
-            codes.forEach((c, i) => { if (c.value) acc.assets.push({ code: c.value, val: parseFloat(vals[i].value) || 0, target: parseFloat(targets[i].value) || 0 }); });
-            
-            localStorage.setItem('than_m7_v111_final', JSON.stringify(DATA));
-            document.getElementById('settings-drawer').classList.add('translate-x-full');
-            run();
-        }
+            // 計算邏輯 - 台股
+            const processedTW = useMemo(() => {
+                const totalCurrent = twAssets.reduce((sum, a) => sum + (a.price * a.shares), 0);
+                const totalPotential = totalCurrent + Number(twNewCapital);
+                return twAssets.map(a => {
+                    const marketValue = a.price * a.shares;
+                    const targetValue = totalPotential * (a.targetPct / 100);
+                    const suggestShares = Math.floor((targetValue - marketValue) / a.price);
+                    return { ...a, marketValue, currentPct: totalCurrent > 0 ? (marketValue / totalCurrent) * 100 : 0, suggestShares };
+                });
+            }, [twAssets, twNewCapital]);
 
-        function run() {
-            const acc = DATA.accounts[DATA.activeIndex];
-            const totalAsset = acc.assets.reduce((sum, a) => sum + (parseFloat(a.val) || 0), 0);
-            const debt = parseFloat(acc.debt) || 0;
-            
-            // 維持率
-            const ratio = (debt > 0) ? Math.round((totalAsset / debt) * 100) : 0;
-            document.getElementById('ui-ratio').innerText = ratio === 0 ? '0%' : ratio + '%';
-            document.getElementById('ui-ratio').style.color = (ratio > 0 && ratio < 180) ? '#F43F5E' : '#10B981';
+            const twTotalValue = processedTW.reduce((sum, a) => sum + a.marketValue, 0);
 
-            // 斜率
-            const totalDebt = debt + (parseFloat(acc.loanAmount) || 0);
-            const slope = totalDebt > 0 ? (acc.cashflow / totalDebt) * 100 : 0;
-            document.getElementById('ui-slope-info').innerText = `淨值抗跌斜率: ${slope.toFixed(4)}% / MONTH`;
+            // 計算邏輯 - 美股
+            const processedUS = useMemo(() => {
+                const totalCurrentUSD = usAssets.reduce((sum, a) => sum + (a.price * a.shares), 0);
+                const totalPotentialUSD = totalCurrentUSD + (Number(usNewCapital) / exchangeRate);
+                return usAssets.map(a => {
+                    const marketValueUSD = a.price * a.shares;
+                    const targetValueUSD = totalPotentialUSD * (a.targetPct / 100);
+                    const suggestShares = Math.floor((targetValueUSD - marketValueUSD) / a.price);
+                    return { 
+                        ...a, 
+                        marketValueUSD, 
+                        marketValueTWD: marketValueUSD * exchangeRate,
+                        currentPct: totalCurrentUSD > 0 ? (marketValueUSD / totalCurrentUSD) * 100 : 0, 
+                        suggestShares 
+                    };
+                });
+            }, [usAssets, usNewCapital, exchangeRate]);
 
-            // 再平衡
-            const tbody = document.getElementById('ui-asset-table');
-            tbody.innerHTML = acc.assets.map(a => {
-                const diff = (totalAsset * (a.target / 100)) - a.val;
-                return `<tr><td class="py-4 font-bold">${a.code}</td><td class="text-right text-gray-500">${a.target}%</td><td class="text-right font-black ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Math.round(diff).toLocaleString()}</td></tr>`;
-            }).join('');
+            const usTotalValueTWD = processedUS.reduce((sum, a) => sum + a.marketValueTWD, 0);
 
-            // 壓力測試
-            document.getElementById('ui-stress-grid').innerHTML = [10, 20, 30, 40, 50, 60].map(d => {
-                const sRatio = (debt > 0) ? Math.round((totalAsset * (1 - d/100) / debt) * 100) : 0;
-                return `<div class="bg-white/5 p-4 rounded-2xl text-center"><p class="text-[9px] text-gray-500 font-bold mb-1">下跌 ${d}%</p><p class="text-lg font-black ${sRatio > 0 && sRatio < 160 ? 'text-rose-400' : 'text-emerald-400'}">${sRatio > 0 ? sRatio + '%' : '--%'}</p></div>`;
-            }).join('');
+            // 質押維護率
+            const twMaintenanceRatio = twLoanAmount > 0 ? (twTotalValue / twLoanAmount) * 100 : 0;
 
-            // 市值與等級
-            document.getElementById('ui-total-assets').innerText = `NT$ ${Math.round(totalAsset).toLocaleString()}`;
-            const netWorth = totalAsset - debt;
-            const exp = Math.min(100, Math.max(0, Math.round((netWorth / 10000000) * 100)));
-            document.getElementById('ui-exp-bar').style.width = exp + '%';
-            document.getElementById('ui-exp-percent').innerText = exp + '%';
-            
-            // 等級名稱
-            let lvName = "核心擴張階段";
-            if (netWorth >= 10000000) lvName = "終極收割階段";
-            else if (netWorth >= 5000000) lvName = "戰略穩固階段";
-            document.getElementById('ui-lv-name').innerText = lvName;
-
-            updateChart(acc.assets, totalAsset);
-        }
-
-        function updateChart(assets, total) {
-            const ctx = document.getElementById('weightChart').getContext('2d');
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, { 
-                type: 'doughnut', 
-                data: { 
-                    labels: assets.map(a => a.code), 
-                    datasets: [{ data: assets.map(a => a.val), backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#F43F5E', '#8B5CF6'], borderWidth: 0 }] 
-                }, 
-                options: { plugins: { legend: { display: false } }, cutout: '80%', maintainAspectRatio: false } 
+            const twStressTest = [0, -10, -20, -30, -40, -50, -60].map(drop => {
+                const droppedValue = twTotalValue * (1 + drop / 100);
+                const ratio = twLoanAmount > 0 ? (droppedValue / twLoanAmount) * 100 : 0;
+                const canBorrow = (droppedValue * 0.6) - twLoanAmount;
+                return { drop, ratio, droppedValue, canBorrow };
             });
-        }
-        window.onload = run;
+
+            const updateAsset = (type, id, field, value) => {
+                const setter = type === 'TW' ? setTwAssets : setUsAssets;
+                setter(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
+            };
+
+            const addAsset = (type) => {
+                const newId = Math.random().toString(36).substr(2, 9);
+                const newItem = { id: newId, code: '', name: 'New Asset', price: 0, shares: 0, targetPct: 0 };
+                if (type === 'TW') setTwAssets([...twAssets, newItem]);
+                else setUsAssets([...usAssets, newItem]);
+            };
+
+            const SidebarItem = ({ id, icon, label, subLabel }) => (
+                <button 
+                    onClick={() => setActiveTab(id)}
+                    className={`w-full flex items-center gap-4 px-6 py-4 transition-all border-r-4 ${
+                        activeTab === id 
+                        ? 'bg-blue-600/10 border-blue-500 text-blue-400' 
+                        : 'border-transparent text-slate-500 hover:bg-white/5'
+                    }`}
+                >
+                    <Icon name={icon} size={22} />
+                    <div className="text-left">
+                        <div className="font-bold text-sm tracking-wide">{label}</div>
+                        <div className="text-[10px] opacity-60 uppercase">{subLabel}</div>
+                    </div>
+                </button>
+            );
+
+            return (
+                <div className="flex min-h-screen">
+                    {/* Left Sidebar */}
+                    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+                        <div className="p-8">
+                            <h1 className="text-xl font-black italic tracking-tighter flex items-center gap-2">
+                                <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center not-italic">A</div>
+                                DASHBOARD
+                            </h1>
+                        </div>
+                        
+                        <nav className="flex-1 mt-4">
+                            <div className="px-6 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Markets</div>
+                            <SidebarItem id="tw-market" icon="layout-grid" label="台股配置" subLabel="Taiwan Assets" />
+                            <SidebarItem id="us-market" icon="globe" label="美股配置" subLabel="US Markets" />
+                            
+                            <div className="px-6 mt-8 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Risk Mgmt</div>
+                            <SidebarItem id="pledge" icon="shield-alert" label="質押維護率" subLabel="Pledge Ratio" />
+                        </nav>
+
+                        <div className="p-6">
+                            <div className="bg-slate-800 rounded-2xl p-4">
+                                <div className="text-[10px] font-bold text-slate-500 mb-2">USD/TWD</div>
+                                <div className="flex items-center justify-between">
+                                    <span className="mono font-bold text-blue-400">{exchangeRate}</span>
+                                    <input 
+                                        type="number" 
+                                        value={exchangeRate}
+                                        onChange={(e) => setExchangeRate(e.target.value)}
+                                        className="w-12 bg-transparent border-b border-slate-700 text-right text-xs focus:outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden">
+                        {/* Top Summary Bar */}
+                        <header className="h-20 border-b border-slate-800 flex items-center px-8 gap-8 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+                            <div>
+                                <div className="text-[10px] font-black text-slate-500 uppercase">總資產估值 (TWD)</div>
+                                <div className="text-2xl font-black mono tracking-tight text-white">
+                                    ${Math.round(twTotalValue + usTotalValueTWD).toLocaleString()}
+                                </div>
+                            </div>
+                            <div className="h-8 w-px bg-slate-800"></div>
+                            <div>
+                                <div className="text-[10px] font-black text-slate-500 uppercase">質押維持率</div>
+                                <div className={`text-2xl font-black mono tracking-tight ${twMaintenanceRatio > 166 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {Math.round(twMaintenanceRatio)}%
+                                </div>
+                            </div>
+                            <div className="flex-1"></div>
+                            <div className="flex gap-2">
+                                <div className="px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">
+                                    台股: ${Math.round(twTotalValue).toLocaleString()}
+                                </div>
+                                <div className="px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">
+                                    美股: ${Math.round(usTotalValueTWD).toLocaleString()}
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Scrollable View Area */}
+                        <div className="flex-1 overflow-y-auto p-8">
+                            {activeTab === 'tw-market' || activeTab === 'us-market' ? (
+                                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                    <div className="flex justify-between items-end mb-6">
+                                        <div>
+                                            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
+                                                {activeTab === 'tw-market' ? 'Taiwan Market' : 'US Market'}
+                                            </h2>
+                                            <p className="text-slate-500 text-sm font-medium">配置比例與再平衡建議</p>
+                                        </div>
+                                        <div className="flex gap-4 items-center bg-slate-800/50 p-3 rounded-2xl border border-white/5">
+                                            <div className="text-right">
+                                                <div className="text-[10px] font-bold text-slate-500">加碼資金 (TWD)</div>
+                                                <input 
+                                                    type="number" 
+                                                    value={activeTab === 'tw-market' ? twNewCapital : usNewCapital} 
+                                                    onChange={e => activeTab === 'tw-market' ? setTwNewCapital(e.target.value) : setUsNewCapital(e.target.value)}
+                                                    className="bg-transparent text-right font-black mono text-blue-400 focus:outline-none w-32"
+                                                />
+                                            </div>
+                                            <button 
+                                                onClick={() => addAsset(activeTab === 'tw-market' ? 'TW' : 'US')}
+                                                className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl transition-all shadow-lg shadow-blue-900/20"
+                                            >
+                                                <Icon name="plus" size={20}/>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass-card rounded-3xl overflow-hidden shadow-2xl">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                <tr>
+                                                    <th className="px-8 py-5">資產標的</th>
+                                                    <th className="px-4 py-5 text-right">現價</th>
+                                                    <th className="px-4 py-5 text-right">股數</th>
+                                                    <th className="px-4 py-5 text-right">市值 (TWD)</th>
+                                                    <th className="px-4 py-5 text-center">目標 %</th>
+                                                    <th className="px-8 py-5 text-center">建議操作</th>
+                                                    <th className="px-4 py-5"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {(activeTab === 'tw-market' ? processedTW : processedUS).map(asset => (
+                                                    <tr key={asset.id} className="hover:bg-white/5 transition-colors">
+                                                        <td className="px-8 py-6">
+                                                            <input value={asset.code} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'code', e.target.value)} className="font-black bg-transparent text-white focus:outline-none text-lg tracking-tight" />
+                                                            <input value={asset.name} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'name', e.target.value)} className="text-xs font-bold text-slate-500 bg-transparent focus:outline-none block mt-0.5" />
+                                                        </td>
+                                                        <td className="px-4 py-6 text-right">
+                                                            <input type="number" value={asset.price} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'price', Number(e.target.value))} className="w-24 text-right bg-slate-800 border border-slate-700 rounded-lg p-2 font-bold mono text-sm outline-none focus:border-blue-500 text-white"/>
+                                                        </td>
+                                                        <td className="px-4 py-6 text-right">
+                                                            <input type="number" value={asset.shares} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'shares', Number(e.target.value))} className="w-24 text-right bg-slate-800 border border-slate-700 rounded-lg p-2 font-bold mono text-sm outline-none focus:border-blue-500 text-white"/>
+                                                        </td>
+                                                        <td className="px-4 py-6 text-right font-bold mono text-sm text-slate-400">
+                                                            ${Math.round(activeTab === 'tw-market' ? asset.marketValue : asset.marketValueTWD).toLocaleString()}
+                                                        </td>
+                                                        <td className="px-4 py-6">
+                                                            <div className="flex flex-col items-center">
+                                                                <input type="number" value={asset.targetPct} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'targetPct', Number(e.target.value))} className="w-16 text-center border-b-2 border-blue-500/30 text-blue-400 font-black text-xl bg-transparent outline-none focus:border-blue-400"/>
+                                                                <div className="text-[10px] font-bold text-slate-600 mt-1 uppercase">CUR: {asset.currentPct.toFixed(1)}%</div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-8 py-6">
+                                                            <div className={`text-center font-black rounded-xl py-3 px-4 text-lg mono ${asset.suggestShares > 0 ? 'text-emerald-400 bg-emerald-400/10' : asset.suggestShares < 0 ? 'text-rose-400 bg-rose-400/10' : 'text-slate-600 bg-slate-800'}`}>
+                                                                {asset.suggestShares > 0 ? `+${asset.suggestShares}` : asset.suggestShares}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-6">
+                                                            <button onClick={() => (activeTab === 'tw-market' ? setTwAssets : setUsAssets)(prev => prev.filter(a => a.id !== asset.id))} className="text-slate-600 hover:text-rose-500">
+                                                                <Icon name="trash-2" size={18}/>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="glass-card p-8 rounded-3xl">
+                                            <h3 className="text-slate-500 text-[10px] font-black uppercase mb-4 tracking-widest">Pledge Assets</h3>
+                                            <div className="text-4xl font-black mono text-white tracking-tighter">
+                                                ${Math.round(twTotalValue).toLocaleString()}
+                                            </div>
+                                            <div className="mt-2 text-[10px] text-slate-600 font-bold uppercase">Based on Taiwan Holdings</div>
+                                        </div>
+                                        <div className="glass-card p-8 rounded-3xl">
+                                            <h3 className="text-slate-500 text-[10px] font-black uppercase mb-4 tracking-widest">Active Loan</h3>
+                                            <div className="flex items-center border-b-2 border-blue-500/20 focus-within:border-blue-500 transition-all">
+                                                <span className="text-blue-500 font-black text-2xl mr-2">$</span>
+                                                <input 
+                                                    type="number"
+                                                    value={twLoanAmount}
+                                                    onChange={(e) => setTwLoanAmount(Number(e.target.value))}
+                                                    className="text-4xl font-black text-blue-400 outline-none w-full bg-transparent mono"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className={`p-8 rounded-3xl shadow-2xl flex flex-col items-center justify-center relative overflow-hidden ${
+                                            twMaintenanceRatio > 166 ? 'bg-emerald-600/20 border-emerald-500/50' : 
+                                            twMaintenanceRatio > 140 ? 'bg-amber-600/20 border-amber-500/50' : 'bg-rose-600/20 border-rose-500/50'
+                                        } border`}>
+                                            <h3 className="text-white/50 text-[10px] font-black uppercase mb-2 tracking-widest">Maintenance Ratio</h3>
+                                            <div className={`text-6xl font-black tracking-tighter mono ${
+                                                twMaintenanceRatio > 166 ? 'text-emerald-400' : 
+                                                twMaintenanceRatio > 140 ? 'text-amber-400' : 'text-rose-400'
+                                            }`}>
+                                                {Math.round(twMaintenanceRatio)}%
+                                            </div>
+                                            {/* 進度條背景 */}
+                                            <div className="w-full h-1 bg-white/10 mt-6 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full transition-all duration-1000 ${
+                                                        twMaintenanceRatio > 166 ? 'bg-emerald-400' : 
+                                                        twMaintenanceRatio > 140 ? 'bg-amber-400' : 'bg-rose-400'
+                                                    }`}
+                                                    style={{ width: `${Math.min(twMaintenanceRatio / 3, 100)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass-card rounded-3xl overflow-hidden shadow-2xl border border-white/5">
+                                        <div className="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+                                            <Icon name="trending-down" size={24} className="text-rose-400" />
+                                            <h3 className="font-black text-lg tracking-tight uppercase text-white">Stress Test / 市場壓力測試</h3>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left">
+                                                <thead>
+                                                    <tr className="bg-white/5 text-slate-500 text-[10px] uppercase tracking-widest font-black">
+                                                        <th className="px-8 py-5">跌幅狀況</th>
+                                                        <th className="px-6 py-5 text-center">維持率</th>
+                                                        <th className="px-6 py-5 text-right">剩餘估值</th>
+                                                        <th className="px-6 py-5 text-right">可貸/需補足</th>
+                                                        <th className="px-8 py-5 text-center">評語</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/5">
+                                                    {twStressTest.map((item, idx) => (
+                                                        <tr key={idx} className={`${item.ratio < 140 ? 'bg-rose-500/5' : 'hover:bg-white/5'}`}>
+                                                            <td className="px-8 py-6 font-black text-white text-xl mono">
+                                                                {item.drop === 0 ? <span className="text-blue-500 text-sm font-black uppercase">Standard</span> : `${item.drop}%`}
+                                                            </td>
+                                                            <td className="px-6 py-6 text-center">
+                                                                <span className={`text-3xl font-black mono ${
+                                                                    item.ratio > 166 ? 'text-emerald-400' : 
+                                                                    item.ratio > 140 ? 'text-amber-400' : 'text-rose-400'
+                                                                }`}>
+                                                                    {Math.round(item.ratio)}%
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-6 text-right text-slate-400 font-bold mono">${Math.round(item.droppedValue).toLocaleString()}</td>
+                                                            <td className={`px-6 py-6 text-right font-black mono text-lg ${item.canBorrow > 0 ? 'text-blue-400' : 'text-rose-500'}`}>
+                                                                {item.canBorrow > 0 ? `+${Math.round(item.canBorrow).toLocaleString()}` : Math.round(item.canBorrow).toLocaleString()}
+                                                            </td>
+                                                            <td className="px-8 py-6 text-center">
+                                                                {item.ratio < 130 ? (
+                                                                    <span className="text-[10px] border border-rose-500 text-rose-500 px-3 py-1 rounded-full font-black uppercase">Critical</span>
+                                                                ) : item.ratio < 140 ? (
+                                                                    <span className="text-[10px] border border-amber-500 text-amber-500 px-3 py-1 rounded-full font-black uppercase">Warning</span>
+                                                                ) : (
+                                                                    <span className="text-[10px] border border-emerald-500 text-emerald-500 px-3 py-1 rounded-full font-black uppercase">Stable</span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
