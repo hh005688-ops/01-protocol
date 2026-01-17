@@ -15,32 +15,48 @@
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         
         :root {
-            --bg-main: #0f172a;
-            --bg-card: #1e293b;
-            --accent-blue: #38bdf8;
-            --accent-green: #10b981;
-            --accent-red: #f43f5e;
+            --bg-main: #0b0f1a;
+            --bg-sidebar: #111827;
+            --bg-card: #1f2937;
+            --accent-blue: #3b82f6;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
         }
 
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
             background-color: var(--bg-main);
-            color: #f1f5f9;
+            color: #e5e7eb;
+            margin: 0;
         }
 
         .mono { font-family: 'JetBrains Mono', monospace; }
 
         /* 自定義捲軸 */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #0b0f1a; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
         
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
         
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
+            background: rgba(31, 41, 55, 0.6);
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.5rem;
+        }
+
+        .sidebar-active {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0) 100%);
+            border-right: 4px solid var(--accent-blue);
+            color: var(--accent-blue) !important;
+        }
+
+        /* 加強輸入框焦點效果 */
+        input:focus {
+            outline: none;
+            border-color: var(--accent-blue) !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
     </style>
 </head>
@@ -59,13 +75,16 @@
 
         const App = () => {
             const [exchangeRate, setExchangeRate] = useState(31.62);
-            const [activeTab, setActiveTab] = useState('tw-market');
+            const [activeTab, setActiveTab] = useState('global');
+
+            // 總體配置比例 (台股 vs 美股)
+            const [globalTargetTW, setGlobalTargetTW] = useState(60);
 
             // 台股資產
             const [twAssets, setTwAssets] = useState([
                 { id: 'tw1', code: '00675L', name: '富邦台灣加權正2', price: 169.8, shares: 6000, targetPct: 70 },
-                { id: 'tw2', code: '00926', name: 'KGI全球產業精英55', price: 23.8, shares: 8000, targetPct: 15 },
-                { id: 'tw3', code: '00965', name: '元大全球航太國防', price: 25.88, shares: 6000, targetPct: 15 },
+                { id: 'tw2', code: '00926', name: '凱基全球菁英55', price: 23.8, shares: 12000, targetPct: 20 },
+                { id: 'tw3', code: '00965', name: '元大全球航太國防', price: 25.88, shares: 6000, targetPct: 10 },
             ]);
             const [twNewCapital, setTwNewCapital] = useState(0);
             const [twLoanAmount, setTwLoanAmount] = useState(130000);
@@ -79,12 +98,12 @@
 
             // 計算邏輯 - 台股
             const processedTW = useMemo(() => {
-                const totalCurrent = twAssets.reduce((sum, a) => sum + (a.price * a.shares), 0);
+                const totalCurrent = twAssets.reduce((sum, a) => sum + (Number(a.price) * Number(a.shares)), 0);
                 const totalPotential = totalCurrent + Number(twNewCapital);
                 return twAssets.map(a => {
-                    const marketValue = a.price * a.shares;
-                    const targetValue = totalPotential * (a.targetPct / 100);
-                    const suggestShares = Math.floor((targetValue - marketValue) / a.price);
+                    const marketValue = Number(a.price) * Number(a.shares);
+                    const targetValue = totalPotential * (Number(a.targetPct) / 100);
+                    const suggestShares = a.price > 0 ? Math.floor((targetValue - marketValue) / a.price) : 0;
                     return { ...a, marketValue, currentPct: totalCurrent > 0 ? (marketValue / totalCurrent) * 100 : 0, suggestShares };
                 });
             }, [twAssets, twNewCapital]);
@@ -93,12 +112,12 @@
 
             // 計算邏輯 - 美股
             const processedUS = useMemo(() => {
-                const totalCurrentUSD = usAssets.reduce((sum, a) => sum + (a.price * a.shares), 0);
+                const totalCurrentUSD = usAssets.reduce((sum, a) => sum + (Number(a.price) * Number(a.shares)), 0);
                 const totalPotentialUSD = totalCurrentUSD + (Number(usNewCapital) / exchangeRate);
                 return usAssets.map(a => {
-                    const marketValueUSD = a.price * a.shares;
-                    const targetValueUSD = totalPotentialUSD * (a.targetPct / 100);
-                    const suggestShares = Math.floor((targetValueUSD - marketValueUSD) / a.price);
+                    const marketValueUSD = Number(a.price) * Number(a.shares);
+                    const targetValueUSD = totalPotentialUSD * (Number(a.targetPct) / 100);
+                    const suggestShares = a.price > 0 ? Math.floor((targetValueUSD - marketValueUSD) / a.price) : 0;
                     return { 
                         ...a, 
                         marketValueUSD, 
@@ -111,9 +130,17 @@
 
             const usTotalValueTWD = processedUS.reduce((sum, a) => sum + a.marketValueTWD, 0);
 
+            // 總體配置計算
+            const totalPortfolioValue = twTotalValue + usTotalValueTWD;
+            const currentTWPct = totalPortfolioValue > 0 ? (twTotalValue / totalPortfolioValue) * 100 : 0;
+            const currentUSPct = totalPortfolioValue > 0 ? (usTotalValueTWD / totalPortfolioValue) * 100 : 0;
+            const globalTargetUS = 100 - globalTargetTW;
+
+            const targetTWValue = totalPortfolioValue * (globalTargetTW / 100);
+            const globalRebalanceTW = targetTWValue - twTotalValue;
+
             // 質押維護率
             const twMaintenanceRatio = twLoanAmount > 0 ? (twTotalValue / twLoanAmount) * 100 : 0;
-
             const twStressTest = [0, -10, -20, -30, -40, -50, -60].map(drop => {
                 const droppedValue = twTotalValue * (1 + drop / 100);
                 const ratio = twLoanAmount > 0 ? (droppedValue / twLoanAmount) * 100 : 0;
@@ -126,269 +153,326 @@
                 setter(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
             };
 
-            const addAsset = (type) => {
+            const handleAddAsset = (type) => {
                 const newId = Math.random().toString(36).substr(2, 9);
-                const newItem = { id: newId, code: '', name: 'New Asset', price: 0, shares: 0, targetPct: 0 };
+                const newItem = { id: newId, code: '', name: '', price: 0, shares: 0, targetPct: 0 };
                 if (type === 'TW') setTwAssets([...twAssets, newItem]);
                 else setUsAssets([...usAssets, newItem]);
             };
 
-            const SidebarItem = ({ id, icon, label, subLabel }) => (
-                <button 
-                    onClick={() => setActiveTab(id)}
-                    className={`w-full flex items-center gap-4 px-6 py-4 transition-all border-r-4 ${
-                        activeTab === id 
-                        ? 'bg-blue-600/10 border-blue-500 text-blue-400' 
-                        : 'border-transparent text-slate-500 hover:bg-white/5'
-                    }`}
-                >
-                    <Icon name={icon} size={22} />
-                    <div className="text-left">
-                        <div className="font-bold text-sm tracking-wide">{label}</div>
-                        <div className="text-[10px] opacity-60 uppercase">{subLabel}</div>
-                    </div>
-                </button>
-            );
+            const handleRemoveAsset = (type, id) => {
+                const setter = type === 'TW' ? setTwAssets : setUsAssets;
+                setter(prev => prev.filter(a => a.id !== id));
+            };
 
             return (
-                <div className="flex min-h-screen">
-                    {/* Left Sidebar */}
-                    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+                <div className="flex h-screen overflow-hidden">
+                    {/* Sidebar */}
+                    <aside className="w-64 bg-[#111827] flex flex-col border-r border-white/5 shrink-0">
                         <div className="p-8">
                             <h1 className="text-xl font-black italic tracking-tighter flex items-center gap-2">
-                                <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center not-italic">A</div>
-                                DASHBOARD
+                                <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center not-italic shadow-lg shadow-blue-500/20">A</div>
+                                OPS-DASH
                             </h1>
                         </div>
                         
-                        <nav className="flex-1 mt-4">
-                            <div className="px-6 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Markets</div>
-                            <SidebarItem id="tw-market" icon="layout-grid" label="台股配置" subLabel="Taiwan Assets" />
-                            <SidebarItem id="us-market" icon="globe" label="美股配置" subLabel="US Markets" />
+                        <nav className="flex-1">
+                            <div className="px-6 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Portfolio</div>
+                            <button onClick={() => setActiveTab('global')} className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'global' ? 'sidebar-active' : 'text-slate-500 hover:bg-white/5'}`}>
+                                <Icon name="pie-chart" size={20} />
+                                <div className="text-left font-bold text-sm">總體配置</div>
+                            </button>
                             
-                            <div className="px-6 mt-8 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Risk Mgmt</div>
-                            <SidebarItem id="pledge" icon="shield-alert" label="質押維護率" subLabel="Pledge Ratio" />
+                            <div className="px-6 mt-6 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Markets</div>
+                            <button onClick={() => setActiveTab('tw-market')} className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'tw-market' ? 'sidebar-active' : 'text-slate-500 hover:bg-white/5'}`}>
+                                <Icon name="layout-grid" size={20} />
+                                <div className="text-left font-bold text-sm">台股管理</div>
+                            </button>
+                            <button onClick={() => setActiveTab('us-market')} className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'us-market' ? 'sidebar-active' : 'text-slate-500 hover:bg-white/5'}`}>
+                                <Icon name="globe" size={20} />
+                                <div className="text-left font-bold text-sm">美股管理</div>
+                            </button>
+                            
+                            <div className="px-6 mt-6 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Risk Mgmt</div>
+                            <button onClick={() => setActiveTab('pledge')} className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'pledge' ? 'sidebar-active' : 'text-slate-500 hover:bg-white/5'}`}>
+                                <Icon name="shield-alert" size={20} />
+                                <div className="text-left font-bold text-sm">質押試算</div>
+                            </button>
                         </nav>
 
                         <div className="p-6">
-                            <div className="bg-slate-800 rounded-2xl p-4">
-                                <div className="text-[10px] font-bold text-slate-500 mb-2">USD/TWD</div>
+                            <div className="bg-slate-800/50 rounded-2xl p-4 border border-white/5">
+                                <div className="text-[10px] font-bold text-slate-500 mb-2 uppercase">USD Exchange</div>
                                 <div className="flex items-center justify-between">
                                     <span className="mono font-bold text-blue-400">{exchangeRate}</span>
-                                    <input 
-                                        type="number" 
-                                        value={exchangeRate}
-                                        onChange={(e) => setExchangeRate(e.target.value)}
-                                        className="w-12 bg-transparent border-b border-slate-700 text-right text-xs focus:outline-none focus:border-blue-500"
-                                    />
+                                    <input type="number" step="0.01" value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} className="w-16 bg-transparent border-b border-slate-700 text-right text-xs focus:outline-none focus:border-blue-500 py-1" />
                                 </div>
                             </div>
                         </div>
                     </aside>
 
-                    {/* Main Content */}
-                    <main className="flex-1 flex flex-col h-screen overflow-hidden">
-                        {/* Top Summary Bar */}
-                        <header className="h-20 border-b border-slate-800 flex items-center px-8 gap-8 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
-                            <div>
-                                <div className="text-[10px] font-black text-slate-500 uppercase">總資產估值 (TWD)</div>
-                                <div className="text-2xl font-black mono tracking-tight text-white">
-                                    ${Math.round(twTotalValue + usTotalValueTWD).toLocaleString()}
+                    {/* Main Content Area */}
+                    <main className="flex-1 flex flex-col overflow-hidden bg-[#0b0f1a]">
+                        {/* Header Stats */}
+                        <header className="h-20 border-b border-white/5 flex items-center px-10 gap-10 bg-[#0b0f1a]/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
+                            <div className="flex-1 flex gap-10">
+                                <div>
+                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">總資產估值 (TWD)</div>
+                                    <div className="text-2xl font-black mono text-white tracking-tighter">
+                                        ${Math.round(totalPortfolioValue).toLocaleString()}
+                                    </div>
+                                </div>
+                                <div className="h-10 w-px bg-white/5 self-center"></div>
+                                <div>
+                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">台股維持率</div>
+                                    <div className={`text-2xl font-black mono tracking-tighter ${twMaintenanceRatio > 166 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        {Math.round(twMaintenanceRatio)}%
+                                    </div>
                                 </div>
                             </div>
-                            <div className="h-8 w-px bg-slate-800"></div>
-                            <div>
-                                <div className="text-[10px] font-black text-slate-500 uppercase">質押維持率</div>
-                                <div className={`text-2xl font-black mono tracking-tight ${twMaintenanceRatio > 166 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                    {Math.round(twMaintenanceRatio)}%
-                                </div>
-                            </div>
-                            <div className="flex-1"></div>
-                            <div className="flex gap-2">
-                                <div className="px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">
-                                    台股: ${Math.round(twTotalValue).toLocaleString()}
-                                </div>
-                                <div className="px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">
-                                    美股: ${Math.round(usTotalValueTWD).toLocaleString()}
-                                </div>
+                            <div className="text-[10px] font-bold text-slate-600 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 uppercase tracking-wider">
+                                System Online
                             </div>
                         </header>
 
-                        {/* Scrollable View Area */}
-                        <div className="flex-1 overflow-y-auto p-8">
-                            {activeTab === 'tw-market' || activeTab === 'us-market' ? (
-                                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                    <div className="flex justify-between items-end mb-6">
+                        {/* View Content */}
+                        <div className="flex-1 overflow-y-auto p-10">
+                            {activeTab === 'global' && (
+                                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                    <div>
+                                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Global Allocation</h2>
+                                        <p className="text-slate-500 font-medium text-sm mt-1">設定不同市場間的目標權重</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        <div className="glass-card p-8 shadow-xl">
+                                            <h3 className="text-slate-400 text-[10px] font-black uppercase mb-6 tracking-widest">市場權重設定</h3>
+                                            <div className="space-y-8">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <span className="font-black text-white uppercase tracking-tight flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-blue-500"></div> Taiwan Stocks
+                                                        </span>
+                                                        <span className="text-blue-400 mono font-bold text-lg">{globalTargetTW}%</span>
+                                                    </div>
+                                                    <input type="range" min="0" max="100" value={globalTargetTW} onChange={e=>setGlobalTargetTW(Number(e.target.value))} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-600"/>
+                                                </div>
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <span className="font-black text-white uppercase tracking-tight flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div> US Stocks
+                                                        </span>
+                                                        <span className="text-emerald-400 mono font-bold text-lg">{globalTargetUS}%</span>
+                                                    </div>
+                                                    <div className="w-full h-2 bg-slate-800 rounded-lg overflow-hidden">
+                                                        <div className="h-full bg-emerald-600" style={{ width: `${globalTargetUS}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="glass-card p-8 flex flex-col justify-center">
+                                            <h3 className="text-slate-400 text-[10px] font-black uppercase mb-6 tracking-widest">跨市場平衡建議</h3>
+                                            <div className="space-y-4">
+                                                <div className="p-6 bg-white/5 rounded-2xl border border-white/5 flex justify-between items-center hover:bg-white/10 transition-all">
+                                                    <div>
+                                                        <div className="text-xs font-bold text-slate-500 mb-1">當前台股佔比</div>
+                                                        <div className="text-3xl font-black mono text-white">{currentTWPct.toFixed(1)}%</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-[10px] font-black text-slate-400 uppercase mb-1">建議調整金額 (台幣)</div>
+                                                        <div className={`text-2xl font-black mono ${globalRebalanceTW > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                            {globalRebalanceTW > 0 ? '+' : ''}{Math.round(globalRebalanceTW).toLocaleString()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 text-[12px] text-blue-300 font-medium leading-relaxed">
+                                                    💡 調整額為正數時，表示台股目前配置不足，建議從美股移動資金或新投入資金至台股部位。
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {(activeTab === 'tw-market' || activeTab === 'us-market') && (
+                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                    <div className="flex justify-between items-end">
                                         <div>
                                             <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
-                                                {activeTab === 'tw-market' ? 'Taiwan Market' : 'US Market'}
+                                                {activeTab === 'tw-market' ? 'Taiwan Portfolio' : 'US Portfolio'}
                                             </h2>
-                                            <p className="text-slate-500 text-sm font-medium">配置比例與再平衡建議</p>
+                                            <p className="text-slate-500 font-medium text-sm mt-1 tracking-wide">
+                                                個別資產配比與再平衡建議
+                                            </p>
                                         </div>
-                                        <div className="flex gap-4 items-center bg-slate-800/50 p-3 rounded-2xl border border-white/5">
-                                            <div className="text-right">
-                                                <div className="text-[10px] font-bold text-slate-500">加碼資金 (TWD)</div>
-                                                <input 
-                                                    type="number" 
-                                                    value={activeTab === 'tw-market' ? twNewCapital : usNewCapital} 
-                                                    onChange={e => activeTab === 'tw-market' ? setTwNewCapital(e.target.value) : setUsNewCapital(e.target.value)}
-                                                    className="bg-transparent text-right font-black mono text-blue-400 focus:outline-none w-32"
-                                                />
+                                        <div className="flex gap-4 items-center bg-white/5 p-4 rounded-3xl border border-white/5 shadow-inner">
+                                            <div className="text-right px-2">
+                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">加碼投入 (TWD)</div>
+                                                <input type="number" value={activeTab === 'tw-market' ? twNewCapital : usNewCapital} onChange={e => activeTab === 'tw-market' ? setTwNewCapital(e.target.value) : setUsNewCapital(e.target.value)} className="bg-transparent text-right font-black mono text-blue-400 focus:outline-none w-32 text-xl" placeholder="0"/>
                                             </div>
+                                            <div className="h-10 w-px bg-white/10 mx-2"></div>
                                             <button 
-                                                onClick={() => addAsset(activeTab === 'tw-market' ? 'TW' : 'US')}
-                                                className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl transition-all shadow-lg shadow-blue-900/20"
+                                                onClick={() => handleAddAsset(activeTab === 'tw-market' ? 'TW' : 'US')} 
+                                                className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-2xl transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2 font-bold group"
                                             >
-                                                <Icon name="plus" size={20}/>
+                                                <Icon name="plus" size={18} className="group-hover:rotate-90 transition-transform" />
+                                                增加標的
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div className="glass-card rounded-3xl overflow-hidden shadow-2xl">
+                                    <div className="glass-card overflow-hidden shadow-2xl">
                                         <table className="w-full text-left">
-                                            <thead className="bg-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            <thead className="bg-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/5">
                                                 <tr>
                                                     <th className="px-8 py-5">資產標的</th>
-                                                    <th className="px-4 py-5 text-right">現價</th>
-                                                    <th className="px-4 py-5 text-right">股數</th>
+                                                    <th className="px-4 py-5 text-right">目前單價</th>
+                                                    <th className="px-4 py-5 text-right">持有股數</th>
                                                     <th className="px-4 py-5 text-right">市值 (TWD)</th>
                                                     <th className="px-4 py-5 text-center">目標 %</th>
-                                                    <th className="px-8 py-5 text-center">建議操作</th>
-                                                    <th className="px-4 py-5"></th>
+                                                    <th className="px-8 py-5 text-center">再平衡建議</th>
+                                                    <th className="px-6 py-5"></th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-white/5">
                                                 {(activeTab === 'tw-market' ? processedTW : processedUS).map(asset => (
-                                                    <tr key={asset.id} className="hover:bg-white/5 transition-colors">
-                                                        <td className="px-8 py-6">
-                                                            <input value={asset.code} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'code', e.target.value)} className="font-black bg-transparent text-white focus:outline-none text-lg tracking-tight" />
-                                                            <input value={asset.name} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'name', e.target.value)} className="text-xs font-bold text-slate-500 bg-transparent focus:outline-none block mt-0.5" />
+                                                    <tr key={asset.id} className="hover:bg-white/5 transition-colors group">
+                                                        <td className="px-8 py-6 min-w-[200px]">
+                                                            <input 
+                                                                placeholder="標代號" 
+                                                                value={asset.code} 
+                                                                onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'code', e.target.value)} 
+                                                                className="font-black bg-transparent text-white focus:outline-none text-lg tracking-tight w-full placeholder:text-slate-700" 
+                                                            />
+                                                            <input 
+                                                                placeholder="資產名稱" 
+                                                                value={asset.name} 
+                                                                onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'name', e.target.value)} 
+                                                                className="text-[11px] font-bold text-slate-500 bg-transparent focus:outline-none block w-full mt-1 placeholder:text-slate-800" 
+                                                            />
                                                         </td>
                                                         <td className="px-4 py-6 text-right">
-                                                            <input type="number" value={asset.price} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'price', Number(e.target.value))} className="w-24 text-right bg-slate-800 border border-slate-700 rounded-lg p-2 font-bold mono text-sm outline-none focus:border-blue-500 text-white"/>
+                                                            <input type="number" value={asset.price} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'price', e.target.value)} className="w-24 text-right bg-slate-900 border border-white/10 rounded-xl p-2.5 font-bold mono text-sm outline-none focus:border-blue-500 text-white shadow-inner"/>
                                                         </td>
                                                         <td className="px-4 py-6 text-right">
-                                                            <input type="number" value={asset.shares} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'shares', Number(e.target.value))} className="w-24 text-right bg-slate-800 border border-slate-700 rounded-lg p-2 font-bold mono text-sm outline-none focus:border-blue-500 text-white"/>
+                                                            <input type="number" value={asset.shares} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'shares', e.target.value)} className="w-24 text-right bg-slate-900 border border-white/10 rounded-xl p-2.5 font-bold mono text-sm outline-none focus:border-blue-500 text-white shadow-inner"/>
                                                         </td>
                                                         <td className="px-4 py-6 text-right font-bold mono text-sm text-slate-400">
                                                             ${Math.round(activeTab === 'tw-market' ? asset.marketValue : asset.marketValueTWD).toLocaleString()}
                                                         </td>
                                                         <td className="px-4 py-6">
                                                             <div className="flex flex-col items-center">
-                                                                <input type="number" value={asset.targetPct} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'targetPct', Number(e.target.value))} className="w-16 text-center border-b-2 border-blue-500/30 text-blue-400 font-black text-xl bg-transparent outline-none focus:border-blue-400"/>
-                                                                <div className="text-[10px] font-bold text-slate-600 mt-1 uppercase">CUR: {asset.currentPct.toFixed(1)}%</div>
+                                                                <div className="flex items-center gap-1">
+                                                                    <input type="number" value={asset.targetPct} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'targetPct', e.target.value)} className="w-14 text-center border-b-2 border-blue-500/30 text-blue-400 font-black text-xl bg-transparent outline-none focus:border-blue-400 py-1"/>
+                                                                    <span className="text-blue-500/50 text-xs font-bold">%</span>
+                                                                </div>
+                                                                <div className="text-[10px] font-bold text-slate-600 mt-2 uppercase">Current: {asset.currentPct.toFixed(1)}%</div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-8 py-6">
-                                                            <div className={`text-center font-black rounded-xl py-3 px-4 text-lg mono ${asset.suggestShares > 0 ? 'text-emerald-400 bg-emerald-400/10' : asset.suggestShares < 0 ? 'text-rose-400 bg-rose-400/10' : 'text-slate-600 bg-slate-800'}`}>
+                                                        <td className="px-8 py-6 min-w-[150px]">
+                                                            <div className={`text-center font-black rounded-2xl py-3 px-4 text-lg mono shadow-sm ${asset.suggestShares > 0 ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-500/20' : asset.suggestShares < 0 ? 'text-rose-400 bg-rose-400/10 border border-rose-500/20' : 'text-slate-600 bg-slate-800'}`}>
                                                                 {asset.suggestShares > 0 ? `+${asset.suggestShares}` : asset.suggestShares}
+                                                                <div className="text-[10px] opacity-60 font-bold uppercase mt-1">
+                                                                    {asset.suggestShares > 0 ? 'Buy' : asset.suggestShares < 0 ? 'Sell' : 'Hold'}
+                                                                </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-4 py-6">
-                                                            <button onClick={() => (activeTab === 'tw-market' ? setTwAssets : setUsAssets)(prev => prev.filter(a => a.id !== asset.id))} className="text-slate-600 hover:text-rose-500">
-                                                                <Icon name="trash-2" size={18}/>
+                                                        <td className="px-6 py-6">
+                                                            <button 
+                                                                onClick={() => handleRemoveAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id)} 
+                                                                className="text-slate-700 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100 p-2 hover:bg-rose-500/10 rounded-lg"
+                                                            >
+                                                                <Icon name="trash-2" size={20}/>
                                                             </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {(activeTab === 'tw-market' ? twAssets : usAssets).length === 0 && (
+                                                    <tr>
+                                                        <td colSpan="7" className="py-20 text-center text-slate-600 font-bold italic">
+                                                            目前暫無標的，請點擊右上方「增加標的」
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'pledge' && (
+                                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        <div className="glass-card p-10 flex flex-col items-center">
+                                            <h3 className="text-slate-500 text-[10px] font-black uppercase mb-4 tracking-widest">台股抵押市值</h3>
+                                            <div className="text-4xl font-black mono text-white tracking-tighter">
+                                                ${Math.round(twTotalValue).toLocaleString()}
+                                            </div>
+                                            <div className="mt-4 text-[10px] bg-white/5 px-4 py-1 rounded-full text-slate-600 font-bold">Auto-Syncing</div>
+                                        </div>
+                                        <div className="glass-card p-10 flex flex-col items-center">
+                                            <h3 className="text-slate-500 text-[10px] font-black uppercase mb-4 tracking-widest">借款總額</h3>
+                                            <div className="flex items-center border-b-4 border-blue-500/20 focus-within:border-blue-500 transition-all px-4">
+                                                <span className="text-blue-500 font-black text-3xl mr-3">$</span>
+                                                <input type="number" value={twLoanAmount} onChange={(e) => setTwLoanAmount(Number(e.target.value))} className="text-4xl font-black text-blue-400 outline-none w-full bg-transparent mono text-center py-2" />
+                                            </div>
+                                        </div>
+                                        <div className={`p-10 rounded-[2rem] border-2 shadow-2xl flex flex-col items-center justify-center transition-all ${twMaintenanceRatio > 166 ? 'bg-emerald-600/10 border-emerald-500/50' : twMaintenanceRatio > 140 ? 'bg-amber-600/10 border-amber-500/50' : 'bg-rose-600/10 border-rose-500/50'}`}>
+                                            <h3 className="text-white/30 text-[10px] font-black uppercase mb-2 tracking-widest">整戶維持率</h3>
+                                            <div className={`text-7xl font-black tracking-tighter mono ${twMaintenanceRatio > 166 ? 'text-emerald-400' : twMaintenanceRatio > 140 ? 'text-amber-400' : 'text-rose-400'}`}>
+                                                {Math.round(twMaintenanceRatio)}%
+                                            </div>
+                                            <div className="mt-4 w-full max-w-[150px] h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                <div className={`h-full ${twMaintenanceRatio > 166 ? 'bg-emerald-400' : twMaintenanceRatio > 140 ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${Math.min(twMaintenanceRatio/4, 100)}%` }}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass-card overflow-hidden shadow-2xl border border-white/5">
+                                        <div className="p-7 bg-slate-900 border-b border-white/5 flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
+                                                <Icon name="trending-down" size={24} className="text-rose-400" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-black text-xl tracking-tight uppercase text-white leading-none">Stress Test</h3>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-2">模擬市場下跌對維持率的影響</p>
+                                            </div>
+                                        </div>
+                                        <table className="w-full text-left">
+                                            <thead className="bg-white/5 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-white/5">
+                                                <tr>
+                                                    <th className="px-10 py-6">市場跌幅</th>
+                                                    <th className="px-6 py-6 text-center">預估維持率</th>
+                                                    <th className="px-6 py-6 text-right">預估市值</th>
+                                                    <th className="px-6 py-6 text-right">剩餘額度/補足金額</th>
+                                                    <th className="px-10 py-6 text-center">狀態</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {twStressTest.map((item, idx) => (
+                                                    <tr key={idx} className={`${item.ratio < 140 ? 'bg-rose-500/10' : 'hover:bg-white/5 transition-all'}`}>
+                                                        <td className="px-10 py-7 font-black text-white text-2xl mono">
+                                                            {item.drop === 0 ? <span className="text-blue-500 text-sm font-black uppercase tracking-widest">Base Level</span> : `${item.drop}%`}
+                                                        </td>
+                                                        <td className="px-6 py-7 text-center">
+                                                            <span className={`text-4xl font-black mono tracking-tighter ${item.ratio > 166 ? 'text-emerald-400' : item.ratio > 140 ? 'text-amber-400' : 'text-rose-400'}`}>
+                                                                {Math.round(item.ratio)}%
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-7 text-right text-slate-400 font-bold mono text-lg">${Math.round(item.droppedValue).toLocaleString()}</td>
+                                                        <td className={`px-6 py-7 text-right font-black mono text-xl ${item.canBorrow > 0 ? 'text-blue-400' : 'text-rose-500'}`}>
+                                                            {item.canBorrow > 0 ? `+${Math.round(item.canBorrow).toLocaleString()}` : Math.round(item.canBorrow).toLocaleString()}
+                                                        </td>
+                                                        <td className="px-10 py-7 text-center">
+                                                            <span className={`text-[10px] border-2 px-4 py-2 rounded-xl font-black uppercase tracking-widest ${item.ratio > 166 ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5' : item.ratio > 140 ? 'border-amber-500/30 text-amber-500 bg-amber-500/5' : 'border-rose-500/30 text-rose-500 bg-rose-500/5'}`}>
+                                                                {item.ratio > 166 ? 'Stable' : item.ratio > 140 ? 'Warning' : 'Critical'}
+                                                            </span>
                                                         </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="glass-card p-8 rounded-3xl">
-                                            <h3 className="text-slate-500 text-[10px] font-black uppercase mb-4 tracking-widest">Pledge Assets</h3>
-                                            <div className="text-4xl font-black mono text-white tracking-tighter">
-                                                ${Math.round(twTotalValue).toLocaleString()}
-                                            </div>
-                                            <div className="mt-2 text-[10px] text-slate-600 font-bold uppercase">Based on Taiwan Holdings</div>
-                                        </div>
-                                        <div className="glass-card p-8 rounded-3xl">
-                                            <h3 className="text-slate-500 text-[10px] font-black uppercase mb-4 tracking-widest">Active Loan</h3>
-                                            <div className="flex items-center border-b-2 border-blue-500/20 focus-within:border-blue-500 transition-all">
-                                                <span className="text-blue-500 font-black text-2xl mr-2">$</span>
-                                                <input 
-                                                    type="number"
-                                                    value={twLoanAmount}
-                                                    onChange={(e) => setTwLoanAmount(Number(e.target.value))}
-                                                    className="text-4xl font-black text-blue-400 outline-none w-full bg-transparent mono"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className={`p-8 rounded-3xl shadow-2xl flex flex-col items-center justify-center relative overflow-hidden ${
-                                            twMaintenanceRatio > 166 ? 'bg-emerald-600/20 border-emerald-500/50' : 
-                                            twMaintenanceRatio > 140 ? 'bg-amber-600/20 border-amber-500/50' : 'bg-rose-600/20 border-rose-500/50'
-                                        } border`}>
-                                            <h3 className="text-white/50 text-[10px] font-black uppercase mb-2 tracking-widest">Maintenance Ratio</h3>
-                                            <div className={`text-6xl font-black tracking-tighter mono ${
-                                                twMaintenanceRatio > 166 ? 'text-emerald-400' : 
-                                                twMaintenanceRatio > 140 ? 'text-amber-400' : 'text-rose-400'
-                                            }`}>
-                                                {Math.round(twMaintenanceRatio)}%
-                                            </div>
-                                            {/* 進度條背景 */}
-                                            <div className="w-full h-1 bg-white/10 mt-6 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full transition-all duration-1000 ${
-                                                        twMaintenanceRatio > 166 ? 'bg-emerald-400' : 
-                                                        twMaintenanceRatio > 140 ? 'bg-amber-400' : 'bg-rose-400'
-                                                    }`}
-                                                    style={{ width: `${Math.min(twMaintenanceRatio / 3, 100)}%` }}
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="glass-card rounded-3xl overflow-hidden shadow-2xl border border-white/5">
-                                        <div className="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
-                                            <Icon name="trending-down" size={24} className="text-rose-400" />
-                                            <h3 className="font-black text-lg tracking-tight uppercase text-white">Stress Test / 市場壓力測試</h3>
-                                        </div>
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left">
-                                                <thead>
-                                                    <tr className="bg-white/5 text-slate-500 text-[10px] uppercase tracking-widest font-black">
-                                                        <th className="px-8 py-5">跌幅狀況</th>
-                                                        <th className="px-6 py-5 text-center">維持率</th>
-                                                        <th className="px-6 py-5 text-right">剩餘估值</th>
-                                                        <th className="px-6 py-5 text-right">可貸/需補足</th>
-                                                        <th className="px-8 py-5 text-center">評語</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-white/5">
-                                                    {twStressTest.map((item, idx) => (
-                                                        <tr key={idx} className={`${item.ratio < 140 ? 'bg-rose-500/5' : 'hover:bg-white/5'}`}>
-                                                            <td className="px-8 py-6 font-black text-white text-xl mono">
-                                                                {item.drop === 0 ? <span className="text-blue-500 text-sm font-black uppercase">Standard</span> : `${item.drop}%`}
-                                                            </td>
-                                                            <td className="px-6 py-6 text-center">
-                                                                <span className={`text-3xl font-black mono ${
-                                                                    item.ratio > 166 ? 'text-emerald-400' : 
-                                                                    item.ratio > 140 ? 'text-amber-400' : 'text-rose-400'
-                                                                }`}>
-                                                                    {Math.round(item.ratio)}%
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-6 py-6 text-right text-slate-400 font-bold mono">${Math.round(item.droppedValue).toLocaleString()}</td>
-                                                            <td className={`px-6 py-6 text-right font-black mono text-lg ${item.canBorrow > 0 ? 'text-blue-400' : 'text-rose-500'}`}>
-                                                                {item.canBorrow > 0 ? `+${Math.round(item.canBorrow).toLocaleString()}` : Math.round(item.canBorrow).toLocaleString()}
-                                                            </td>
-                                                            <td className="px-8 py-6 text-center">
-                                                                {item.ratio < 130 ? (
-                                                                    <span className="text-[10px] border border-rose-500 text-rose-500 px-3 py-1 rounded-full font-black uppercase">Critical</span>
-                                                                ) : item.ratio < 140 ? (
-                                                                    <span className="text-[10px] border border-amber-500 text-amber-500 px-3 py-1 rounded-full font-black uppercase">Warning</span>
-                                                                ) : (
-                                                                    <span className="text-[10px] border border-emerald-500 text-emerald-500 px-3 py-1 rounded-full font-black uppercase">Stable</span>
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
                                     </div>
                                 </div>
                             )}
