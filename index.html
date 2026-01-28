@@ -3,325 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>專業資產配置與質押管理系統 - 永久保存版</title>
-    <!-- React & Tailwind -->
+    <title>股期記錄監控系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        :root { --bg-main: #0b0f1a; --accent-blue: #3b82f6; }
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-main); color: #e5e7eb; margin: 0; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
-        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
-        .glass-card { background: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1.5rem; }
-        .sidebar-active { background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0) 100%); border-right: 4px solid var(--accent-blue); color: var(--accent-blue) !important; }
-        input:focus { outline: none; border-color: var(--accent-blue) !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
-        .btn-hover { transition: all 0.2s; }
-        .btn-hover:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+        }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo, useEffect } = React;
+        const { useState, useMemo } = React;
+        const { 
+            TrendingUp, TrendingDown, LayoutDashboard, 
+            ArrowUpRight, ArrowDownRight, RefreshCw, 
+            DollarSign, PieChart, Activity 
+        } = lucide-react;
 
-        const Icon = ({ name, size = 20, className = "" }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
-        };
+        // 初始資料 (從 CSV 解析並結構化)
+        const initialData = [
+            { id: 1, type: '台股', code: '00675L', name: '富邦台灣加權2倍槓桿ETF', price: 183.9, shares: 6000, marketValue: 1103400, change: '2.62%', profit: 28940, currentPct: 76.12, targetPct: 70, targetMV: 1014692, action: -483 },
+            { id: 2, type: '台股', code: '00926', name: 'KGI全球產業精英55 ETF', price: 24.19, shares: 8000, marketValue: 193520, change: '0.21%', profit: 401, currentPct: 13.35, targetPct: 15, targetMV: 217434, action: 988 },
+            { id: 3, type: '台股', code: '00965', name: '元大全球航空航太與國防科技ETF', price: 25.44, shares: 6000, marketValue: 152640, change: '0.51%', profit: 784, currentPct: 10.53, targetPct: 15, targetMV: 217434, action: 2546 },
+            { id: 4, type: '美股', code: 'QQQM', name: 'Invesco NASDAQ 100 ETF', price: 259.85, shares: 49, marketValue: 398905, change: '0.90%', profit: 7426, currentPct: 48.18, targetPct: 50, targetMV: 413934.93, action: 57 },
+            { id: 5, type: '美股', code: 'SMH', name: 'VanEck半導體ETF', price: 400.0, shares: 32, marketValue: 428120, change: '1.20%', profit: 12450, currentPct: 51.82, targetPct: 50, targetMV: 413934.93, action: -35 }
+        ];
+
+        const StatCard = ({ title, value, icon: Icon, color, subValue }) => (
+            <div className="glass-card p-6 rounded-2xl shadow-sm flex items-center space-x-4">
+                <div className={`p-3 rounded-xl ${color}`}>
+                    <Icon size={24} className="text-white" />
+                </div>
+                <div>
+                    <p className="text-sm text-gray-500 font-medium">{title}</p>
+                    <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
+                    {subValue && <p className="text-xs text-gray-400 mt-1">{subValue}</p>}
+                </div>
+            </div>
+        );
 
         const App = () => {
-            // 狀態定義
-            const [exchangeRate, setExchangeRate] = useState(31.62);
-            const [activeTab, setActiveTab] = useState('tw-market');
-            const [globalTargetTW, setGlobalTargetTW] = useState(60);
-            const [twAssets, setTwAssets] = useState([
-                { id: 'tw1', code: '00675L', name: '富邦台灣加權正2', price: 169.8, shares: 6000, targetPct: 70 },
-            ]);
-            const [twNewCapital, setTwNewCapital] = useState(0);
-            const [twLoanAmount, setTwLoanAmount] = useState(130000);
-            const [usAssets, setUsAssets] = useState([
-                { id: 'us1', code: 'QQQM', name: 'Invesco NASDAQ 100', price: 255.71, shares: 49, targetPct: 100 },
-            ]);
-            const [usNewCapital, setUsNewCapital] = useState(0);
-            const [isLoaded, setIsLoaded] = useState(false);
+            const [data, setData] = useState(initialData);
 
-            // 1. 初始化讀取資料 (從 localStorage)
-            useEffect(() => {
-                const savedData = localStorage.getItem('investment_data');
-                if (savedData) {
-                    try {
-                        const parsed = JSON.parse(savedData);
-                        setExchangeRate(parsed.exchangeRate || 31.62);
-                        setGlobalTargetTW(parsed.globalTargetTW || 60);
-                        setTwAssets(parsed.twAssets || []);
-                        setTwNewCapital(parsed.twNewCapital || 0);
-                        setTwLoanAmount(parsed.twLoanAmount || 0);
-                        setUsAssets(parsed.usAssets || []);
-                        setUsNewCapital(parsed.usNewCapital || 0);
-                    } catch (e) {
-                        console.error("讀取存檔失敗", e);
-                    }
-                }
-                setIsLoaded(true);
-            }, []);
-
-            // 2. 自動存檔 (當任何資料變動時)
-            useEffect(() => {
-                if (!isLoaded) return;
-                const dataToSave = {
-                    exchangeRate, globalTargetTW, twAssets, twNewCapital, twLoanAmount, usAssets, usNewCapital
+            const stats = useMemo(() => {
+                const totalMV = data.reduce((acc, curr) => acc + curr.marketValue, 0);
+                const totalProfit = data.reduce((acc, curr) => acc + curr.profit, 0);
+                const twStocks = data.filter(s => s.type === '台股');
+                const usStocks = data.filter(s => s.type === '美股');
+                
+                return {
+                    totalMV,
+                    totalProfit,
+                    twMV: twStocks.reduce((acc, curr) => acc + curr.marketValue, 0),
+                    usMV: usStocks.reduce((acc, curr) => acc + curr.marketValue, 0),
+                    count: data.length
                 };
-                localStorage.setItem('investment_data', JSON.stringify(dataToSave));
-            }, [exchangeRate, globalTargetTW, twAssets, twNewCapital, twLoanAmount, usAssets, usNewCapital, isLoaded]);
+            }, [data]);
 
-            // 計算邏輯
-            const processedTW = useMemo(() => {
-                const totalCurrent = twAssets.reduce((sum, a) => sum + (Number(a.price) * Number(a.shares)), 0);
-                const totalPotential = totalCurrent + Number(twNewCapital);
-                return twAssets.map(a => {
-                    const marketValue = Number(a.price) * Number(a.shares);
-                    const targetValue = totalPotential * (Number(a.targetPct) / 100);
-                    const suggestShares = a.price > 0 ? Math.floor((targetValue - marketValue) / a.price) : 0;
-                    return { ...a, marketValue, currentPct: totalCurrent > 0 ? (marketValue / totalCurrent) * 100 : 0, suggestShares };
-                });
-            }, [twAssets, twNewCapital]);
-
-            const twTotalValue = processedTW.reduce((sum, a) => sum + a.marketValue, 0);
-
-            const processedUS = useMemo(() => {
-                const totalCurrentUSD = usAssets.reduce((sum, a) => sum + (Number(a.price) * Number(a.shares)), 0);
-                const totalPotentialUSD = totalCurrentUSD + (Number(usNewCapital) / exchangeRate);
-                return usAssets.map(a => {
-                    const marketValueUSD = Number(a.price) * Number(a.shares);
-                    const targetValueUSD = totalPotentialUSD * (Number(a.targetPct) / 100);
-                    const suggestShares = a.price > 0 ? Math.floor((targetValueUSD - marketValueUSD) / a.price) : 0;
-                    return { ...a, marketValueUSD, marketValueTWD: marketValueUSD * exchangeRate, currentPct: totalCurrentUSD > 0 ? (marketValueUSD / totalCurrentUSD) * 100 : 0, suggestShares };
-                });
-            }, [usAssets, usNewCapital, exchangeRate]);
-
-            const usTotalValueTWD = processedUS.reduce((sum, a) => sum + a.marketValueTWD, 0);
-            const totalPortfolioValue = twTotalValue + usTotalValueTWD;
-            const twMaintenanceRatio = twLoanAmount > 0 ? (twTotalValue / twLoanAmount) * 100 : 0;
-
-            const twStressTest = [0, -10, -20, -30, -40, -50, -60].map(drop => {
-                const droppedValue = twTotalValue * (1 + drop / 100);
-                const ratio = twLoanAmount > 0 ? (droppedValue / twLoanAmount) * 100 : 0;
-                const canBorrow = (droppedValue * 0.6) - twLoanAmount;
-                return { drop, ratio, droppedValue, canBorrow };
-            });
-
-            // 功能函數
-            const handleAddAsset = (type) => {
-                const newId = Date.now().toString();
-                const newItem = { id: newId, code: '', name: '', price: 0, shares: 0, targetPct: 0 };
-                if (type === 'TW') setTwAssets([...twAssets, newItem]);
-                else setUsAssets([...usAssets, newItem]);
-            };
-
-            const updateAsset = (type, id, field, value) => {
-                const setter = type === 'TW' ? setTwAssets : setUsAssets;
-                setter(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
-            };
+            const formatCurrency = (val) => new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 }).format(val);
 
             return (
-                <div className="flex h-screen overflow-hidden">
-                    {/* Sidebar */}
-                    <aside className="w-64 bg-[#111827] flex flex-col border-r border-white/5 shrink-0">
-                        <div className="p-8">
-                            <h1 className="text-xl font-black italic tracking-tighter flex items-center gap-2">
-                                <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center not-italic text-white">A</div>
-                                OPS-DASH
+                <div className="max-w-7xl mx-auto px-4 py-8 md:px-6">
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                        <div>
+                            <h1 className="text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+                                <LayoutDashboard className="text-blue-600" />
+                                股期壓力測試監控系統
                             </h1>
+                            <p className="text-gray-500 mt-1">即時資產配置與操作建議分析</p>
                         </div>
-                        <nav className="flex-1">
-                            <div className="px-6 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Markets</div>
-                            <button onClick={() => setActiveTab('tw-market')} className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'tw-market' ? 'sidebar-active' : 'text-slate-500 hover:bg-white/5'}`}>
-                                <Icon name="layout-grid" size={20} /><div className="text-left font-bold text-sm">台股管理</div>
+                        <div className="flex items-center gap-3">
+                            <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all shadow-sm">
+                                <RefreshCw size={16} /> 更新數據
                             </button>
-                            <button onClick={() => setActiveTab('us-market')} className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'us-market' ? 'sidebar-active' : 'text-slate-500 hover:bg-white/5'}`}>
-                                <Icon name="globe" size={20} /><div className="text-left font-bold text-sm">美股管理</div>
-                            </button>
-                            <div className="px-6 mt-6 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">Risk Mgmt</div>
-                            <button onClick={() => setActiveTab('pledge')} className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'pledge' ? 'sidebar-active' : 'text-slate-500 hover:bg-white/5'}`}>
-                                <Icon name="shield-alert" size={20} /><div className="text-left font-bold text-sm">質押試算</div>
-                            </button>
-                        </nav>
-                        <div className="p-6">
-                            <div className="bg-slate-800/50 rounded-2xl p-4 border border-white/5 text-center">
-                                <div className="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-tighter">美金匯率 USD/TWD</div>
-                                <input type="number" step="0.01" value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} className="w-full bg-transparent border-b border-slate-700 text-center text-lg font-black text-blue-400 focus:outline-none focus:border-blue-500 py-1" />
+                            <div className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md shadow-blue-200">
+                                正常運行中
                             </div>
                         </div>
-                    </aside>
+                    </div>
 
-                    {/* Main */}
-                    <main className="flex-1 flex flex-col overflow-hidden bg-[#0b0f1a]">
-                        <header className="h-20 border-b border-white/5 flex items-center px-10 gap-10 bg-[#0b0f1a]/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
-                            <div className="flex-1 flex gap-10">
-                                <div>
-                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">總市值 (TWD)</div>
-                                    <div className="text-2xl font-black mono text-white tracking-tighter">${Math.round(totalPortfolioValue).toLocaleString()}</div>
-                                </div>
-                                <div className="h-10 w-px bg-white/5 self-center"></div>
-                                <div>
-                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">台股維持率</div>
-                                    <div className={`text-2xl font-black mono tracking-tighter ${twMaintenanceRatio > 166 ? 'text-emerald-400' : 'text-rose-400'}`}>{Math.round(twMaintenanceRatio)}%</div>
-                                </div>
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                        <StatCard 
+                            title="總市值 (約當台幣)" 
+                            value={`$${formatCurrency(stats.totalMV)}`} 
+                            icon={DollarSign} 
+                            color="bg-blue-600"
+                            subValue={`持倉數量: ${stats.count} 檔`}
+                        />
+                        <StatCard 
+                            title="今日總損益" 
+                            value={`$${formatCurrency(stats.totalProfit)}`} 
+                            icon={stats.totalProfit >= 0 ? TrendingUp : TrendingDown} 
+                            color={stats.totalProfit >= 0 ? "bg-emerald-500" : "bg-rose-500"}
+                        />
+                        <StatCard 
+                            title="台股配置" 
+                            value={`$${formatCurrency(stats.twMV)}`} 
+                            icon={PieChart} 
+                            color="bg-indigo-500"
+                            subValue={`佔比: ${((stats.twMV / stats.totalMV) * 100).toFixed(1)}%`}
+                        />
+                        <StatCard 
+                            title="美股配置" 
+                            value={`$${formatCurrency(stats.usMV)}`} 
+                            icon={Activity} 
+                            color="bg-amber-500"
+                            subValue={`佔比: ${((stats.usMV / stats.totalMV) * 100).toFixed(1)}%`}
+                        />
+                    </div>
+
+                    {/* Tables Section */}
+                    {['台股', '美股'].map(marketType => (
+                        <div key={marketType} className="mb-12">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className={`w-1 h-6 rounded-full ${marketType === '台股' ? 'bg-blue-600' : 'bg-amber-500'}`}></div>
+                                <h2 className="text-xl font-bold text-gray-800">{marketType} 組合記錄</h2>
                             </div>
-                            <div className="flex items-center gap-2 text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
-                                <Icon name="save" size={14} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Auto Saved</span>
+                            
+                            <div className="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-100">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-100">
+                                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">標的名稱</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">現價 / 漲跌</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">持有股數</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">目前市值</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">目標 % / 目前 %</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">建議操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {data.filter(s => s.type === marketType).map((item) => (
+                                            <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="font-bold text-gray-900">{item.code}</div>
+                                                    <div className="text-xs text-gray-500 truncate max-w-[150px] md:max-w-xs">{item.name}</div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="font-semibold text-gray-900">${item.price}</div>
+                                                    <div className={`text-xs flex items-center justify-end gap-1 ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                        {item.profit >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                                                        {item.change}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right text-sm text-gray-700 font-medium">
+                                                    {formatCurrency(item.shares)}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="font-bold text-gray-900">${formatCurrency(item.marketValue)}</div>
+                                                    <div className={`text-xs ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                        今日: {item.profit >= 0 ? '+' : ''}{formatCurrency(item.profit)}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col items-center gap-1.5">
+                                                        <div className="w-full bg-gray-100 rounded-full h-1.5 max-w-[80px]">
+                                                            <div 
+                                                                className="bg-blue-500 h-1.5 rounded-full" 
+                                                                style={{ width: `${Math.min(item.currentPct, 100)}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <span className="text-xs font-semibold text-gray-600">
+                                                            {item.targetPct}% / <span className={item.currentPct > item.targetPct ? 'text-amber-600' : 'text-blue-600'}>{item.currentPct}%</span>
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${
+                                                        item.action > 0 
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                                                            : item.action < 0 
+                                                                ? 'bg-rose-50 text-rose-700 border-rose-100'
+                                                                : 'bg-gray-50 text-gray-700 border-gray-100'
+                                                    }`}>
+                                                        {item.action > 0 ? `買進 ${item.action}` : item.action < 0 ? `減持 ${Math.abs(item.action)}` : '持平'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                        </header>
-
-                        <div className="flex-1 overflow-y-auto p-10">
-                            {(activeTab === 'tw-market' || activeTab === 'us-market') && (
-                                <div className="space-y-8 animate-in fade-in duration-500">
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <h2 className="text-4xl font-black text-white uppercase tracking-tighter">
-                                                {activeTab === 'tw-market' ? 'Taiwan Portfolio' : 'US Portfolio'}
-                                            </h2>
-                                            <p className="text-slate-500 font-bold mt-2">點擊右側按鈕增加新股票或 ETF</p>
-                                        </div>
-                                        <div className="flex gap-6 items-center bg-white/5 p-5 rounded-[2rem] border border-white/5 shadow-2xl">
-                                            <div className="text-right px-2">
-                                                <div className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest italic">加碼預算 (TWD)</div>
-                                                <input type="number" value={activeTab === 'tw-market' ? twNewCapital : usNewCapital} onChange={e => activeTab === 'tw-market' ? setTwNewCapital(e.target.value) : setUsNewCapital(e.target.value)} className="bg-transparent text-right font-black mono text-blue-400 focus:outline-none w-32 text-2xl" />
-                                            </div>
-                                            <button 
-                                                onClick={() => handleAddAsset(activeTab === 'tw-market' ? 'TW' : 'US')} 
-                                                className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl transition-all shadow-xl shadow-blue-600/30 flex items-center gap-3 font-black uppercase tracking-tight btn-hover"
-                                            >
-                                                <Icon name="plus-circle" size={24} />
-                                                增加增加標的
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="glass-card overflow-hidden">
-                                        <table className="w-full text-left">
-                                            <thead className="bg-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/5">
-                                                <tr>
-                                                    <th className="px-8 py-5">資產標的</th>
-                                                    <th className="px-4 py-5 text-right">單價</th>
-                                                    <th className="px-4 py-5 text-right">股數</th>
-                                                    <th className="px-4 py-5 text-right">市值 (TWD)</th>
-                                                    <th className="px-4 py-5 text-center">目標 %</th>
-                                                    <th className="px-8 py-5 text-center">再平衡建議</th>
-                                                    <th className="px-6 py-5"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {(activeTab === 'tw-market' ? processedTW : processedUS).map(asset => (
-                                                    <tr key={asset.id} className="hover:bg-white/5 transition-colors group">
-                                                        <td className="px-8 py-6">
-                                                            <input placeholder="代號" value={asset.code} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'code', e.target.value)} className="font-black bg-transparent text-white focus:outline-none text-xl w-full" />
-                                                            <input placeholder="名稱" value={asset.name} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'name', e.target.value)} className="text-xs font-bold text-slate-500 bg-transparent focus:outline-none block w-full mt-1" />
-                                                        </td>
-                                                        <td className="px-4 py-6 text-right"><input type="number" value={asset.price} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'price', e.target.value)} className="w-24 text-right bg-slate-900 border border-white/10 rounded-xl p-2.5 font-bold mono text-sm outline-none focus:border-blue-500 text-white shadow-inner"/></td>
-                                                        <td className="px-4 py-6 text-right"><input type="number" value={asset.shares} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'shares', e.target.value)} className="w-24 text-right bg-slate-900 border border-white/10 rounded-xl p-2.5 font-bold mono text-sm outline-none focus:border-blue-500 text-white shadow-inner"/></td>
-                                                        <td className="px-4 py-6 text-right font-bold mono text-sm text-slate-400">${Math.round(activeTab === 'tw-market' ? asset.marketValue : asset.marketValueTWD).toLocaleString()}</td>
-                                                        <td className="px-4 py-6 text-center">
-                                                            <div className="flex flex-col items-center">
-                                                                <input type="number" value={asset.targetPct} onChange={e=>updateAsset(activeTab === 'tw-market' ? 'TW' : 'US', asset.id, 'targetPct', e.target.value)} className="w-16 text-center border-b-2 border-blue-500/30 text-blue-400 font-black text-2xl bg-transparent outline-none focus:border-blue-400 py-1"/>
-                                                                <div className="text-[10px] font-bold text-slate-600 mt-2">Cur: {asset.currentPct.toFixed(1)}%</div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-6">
-                                                            <div className={`text-center font-black rounded-2xl py-3 px-4 text-xl mono shadow-2xl ${asset.suggestShares > 0 ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-500/20' : asset.suggestShares < 0 ? 'text-rose-400 bg-rose-400/10 border border-rose-500/20' : 'text-slate-600 bg-slate-800'}`}>
-                                                                {asset.suggestShares > 0 ? `+${asset.suggestShares}` : asset.suggestShares}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-6 text-right">
-                                                            <button onClick={() => (activeTab === 'tw-market' ? setTwAssets : setUsAssets)(prev => prev.filter(a => a.id !== asset.id))} className="text-slate-700 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100 p-2 hover:bg-rose-500/10 rounded-xl">
-                                                                <Icon name="trash-2" size={20}/>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                        {(activeTab === 'tw-market' ? twAssets : usAssets).length === 0 && (
-                                            <div className="py-20 text-center text-slate-600 font-black italic uppercase tracking-widest">No Assets Found. Click "增加增加標的" to start.</div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'pledge' && (
-                                <div className="space-y-10 animate-in fade-in duration-500">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                        <div className="glass-card p-10 flex flex-col items-center shadow-2xl transition-transform hover:scale-[1.02]">
-                                            <h3 className="text-slate-500 text-[10px] font-black uppercase mb-4 tracking-widest">台股抵押市值 (TWD)</h3>
-                                            <div className="text-4xl font-black mono text-white tracking-tighter">${Math.round(twTotalValue).toLocaleString()}</div>
-                                        </div>
-                                        <div className="glass-card p-10 flex flex-col items-center shadow-2xl transition-transform hover:scale-[1.02]">
-                                            <h3 className="text-slate-500 text-[10px] font-black uppercase mb-4 tracking-widest italic text-blue-400">請輸入借款總額</h3>
-                                            <div className="flex items-center border-b-4 border-blue-500/30 focus-within:border-blue-500 transition-all px-4">
-                                                <span className="text-blue-500 font-black text-3xl mr-3">$</span>
-                                                <input type="number" value={twLoanAmount} onChange={(e) => setTwLoanAmount(Number(e.target.value))} className="text-4xl font-black outline-none w-full bg-transparent mono text-center py-2 text-white" />
-                                            </div>
-                                        </div>
-                                        <div className={`p-10 rounded-[2.5rem] border-4 shadow-2xl flex flex-col items-center justify-center transition-all ${twMaintenanceRatio > 166 ? 'bg-emerald-600/10 border-emerald-500/50' : 'bg-rose-600/10 border-rose-500/50'}`}>
-                                            <h3 className="text-white/30 text-[10px] font-black uppercase mb-2">整戶維持率</h3>
-                                            <div className={`text-7xl font-black mono tracking-tighter ${twMaintenanceRatio > 166 ? 'text-emerald-400' : 'text-rose-400'}`}>{Math.round(twMaintenanceRatio)}%</div>
-                                        </div>
-                                    </div>
-
-                                    <div className="glass-card overflow-hidden shadow-2xl border border-white/5">
-                                        <div className="p-8 bg-slate-900 border-b border-white/5 flex items-center gap-4">
-                                            <Icon name="trending-down" size={32} className="text-rose-500" />
-                                            <div>
-                                                <h3 className="font-black text-2xl uppercase text-white leading-none tracking-tight">Stress Test</h3>
-                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-2">模擬市場下跌對維持率的影響與補人進度</p>
-                                            </div>
-                                        </div>
-                                        <table className="w-full text-left">
-                                            <thead className="bg-white/5 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-white/5">
-                                                <tr>
-                                                    <th className="px-10 py-6 italic text-blue-400">市場跌幅</th>
-                                                    <th className="px-6 py-6 text-center">預估維持率</th>
-                                                    <th className="px-6 py-6 text-right">剩餘估值</th>
-                                                    <th className="px-6 py-6 text-right">可貸/補足</th>
-                                                    <th className="px-10 py-6 text-center">狀態</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {twStressTest.map((item, idx) => (
-                                                    <tr key={idx} className={`${item.ratio < 140 ? 'bg-rose-500/10 animate-pulse' : 'hover:bg-white/5 transition-all'}`}>
-                                                        <td className="px-10 py-8 font-black text-white text-3xl mono">{item.drop === 0 ? 'BASE' : `${item.drop}%`}</td>
-                                                        <td className="px-6 py-8 text-center">
-                                                            <span className={`text-5xl font-black mono tracking-tighter ${item.ratio > 166 ? 'text-emerald-400' : item.ratio > 140 ? 'text-amber-400' : 'text-rose-400'}`}>
-                                                                {Math.round(item.ratio)}%
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-8 text-right text-slate-400 font-bold mono text-xl">${Math.round(item.droppedValue).toLocaleString()}</td>
-                                                        <td className={`px-6 py-8 text-right font-black mono text-2xl ${item.canBorrow > 0 ? 'text-blue-400' : 'text-rose-500'}`}>
-                                                            {item.canBorrow > 0 ? `+${Math.round(item.canBorrow).toLocaleString()}` : Math.round(item.canBorrow).toLocaleString()}
-                                                        </td>
-                                                        <td className="px-10 py-8 text-center">
-                                                            <span className={`text-[12px] border-2 px-6 py-3 rounded-2xl font-black uppercase tracking-widest ${item.ratio > 166 ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10' : 'border-rose-500 text-rose-500 bg-rose-500/10'}`}>
-                                                                {item.ratio > 166 ? 'Safe' : item.ratio > 140 ? 'Warning' : 'Danger'}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
                         </div>
-                    </main>
+                    ))}
+                    
+                    <footer className="text-center text-gray-400 text-xs mt-12 pb-8">
+                        此網頁僅供壓力測試與學術研究參考，非投資建議。
+                    </footer>
                 </div>
             );
         };
